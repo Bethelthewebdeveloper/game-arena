@@ -9,13 +9,18 @@
     return user;
   }
 
-  async function submitRun(gameId, score, xp, coins) {
-    const res = await fetch("/api/progress", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ gameId, score, xp, coins }),
-    });
-    return res.json();
+  async function submitRun(gameId, score, xp, coins, extra) {
+    const payload = Object.assign({ gameId, score, xp, coins }, extra || {});
+    try {
+      const res = await fetch("/api/progress", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+      return await res.json();
+    } catch {
+      return { error: "Could not save result. Check your connection and try again." };
+    }
   }
 
   function mountChrome(title) {

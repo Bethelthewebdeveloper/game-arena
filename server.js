@@ -17,8 +17,18 @@ const GAMES = [
   { id: "penalty", name: "Penalty Shootout", path: "/games/penalty.html", difficulty: "Easy" },
   { id: "rps", name: "Rock Paper Scissors", path: "/games/rps.html", difficulty: "Easy" },
   { id: "wordclash", name: "Word Clash", path: "/games/wordclash.html", difficulty: "Medium" },
-  { id: "trivia", name: "Trivia Rush", path: "/games/trivia.html", difficulty: "Hard" }
+  { id: "trivia", name: "Trivia Rush", path: "/games/trivia.html", difficulty: "Hard" },
+  { id: "minirace", name: "Mini Race", path: "/games/minirace.html", difficulty: "Medium" },
+  { id: "targetstrike", name: "Target Strike", path: "/games/targetstrike.html", difficulty: "Hard" },
+  { id: "patternmaster", name: "Pattern Master", path: "/games/patternmaster.html", difficulty: "Medium" },
+  { id: "numberrush", name: "Number Rush", path: "/games/numberrush.html", difficulty: "Medium" },
+  { id: "codebreaker", name: "Code Breaker", path: "/games/codebreaker.html", difficulty: "Hard" }
 ];
+
+const SCORE_CAP = {
+  riddle: 500, reflex: 300, memory: 200, penalty: 10, rps: 50, wordclash: 300, trivia: 300,
+  minirace: 2000, targetstrike: 2500, patternmaster: 2500, numberrush: 2500, codebreaker: 2500
+};
 
 const MIME = {
   ".html": "text/html; charset=utf-8",
@@ -75,6 +85,50 @@ function levelFromXp(xp) { return Math.max(1, Math.floor((xp || 0) / 100) + 1); 
 function xpIntoLevel(xp) { return (xp || 0) % 100; }
 function withLevel(user) {
   return { ...publicUser(user), level: levelFromXp(user.xp), xpIntoLevel: xpIntoLevel(user.xp) };
+}
+
+function daysBetween(a, b) {
+  const da = Date.parse(a + "T00:00:00Z");
+  const db = Date.parse(b + "T00:00:00Z");
+  if (!Number.isFinite(da) || !Number.isFinite(db)) return 99;
+  return Math.round((db - da) / 86400000);
+}
+
+function unlock(user, id) {
+  if (!user.achievements.includes(id)) user.achievements.push(id);
+}
+
+function grantAchievements(user, gameId, st, completed) {
+  if (gameId === "minirace") {
+    if (st.plays >= 1) unlock(user, "race-first");
+    if ((st.bestTime || 999) <= 20) unlock(user, "race-speed");
+    if ((st.stage || 1) >= 10) unlock(user, "race-track");
+    if ((st.racesPlayed || st.completions || 0) >= 10) unlock(user, "race-10");
+  }
+  if (gameId === "targetstrike") {
+    if (st.plays >= 1) unlock(user, "strike-first");
+    if ((st.accuracy || 0) >= 90) unlock(user, "strike-sharp");
+    if ((st.accuracy || 0) >= 100 && completed) unlock(user, "strike-perfect");
+    if ((st.targetsHit || 0) >= 100) unlock(user, "strike-100");
+  }
+  if (gameId === "patternmaster") {
+    if (st.plays >= 1) unlock(user, "pattern-first");
+    if ((st.stage || 1) >= 15) unlock(user, "pattern-memory");
+    if ((st.accuracy || 0) >= 100 && completed) unlock(user, "pattern-perfect");
+    if ((st.patternsSolved || 0) >= 25) unlock(user, "pattern-25");
+  }
+  if (gameId === "numberrush") {
+    if (st.plays >= 1) unlock(user, "number-first");
+    if ((st.stage || 1) >= 20) unlock(user, "number-ninja");
+    if ((st.best || 0) >= 800) unlock(user, "number-speed");
+    if ((st.correctAnswers || 0) >= 100) unlock(user, "number-100");
+  }
+  if (gameId === "codebreaker") {
+    if (st.plays >= 1) unlock(user, "code-first");
+    if ((st.codesSolved || 0) >= 5) unlock(user, "code-cracker");
+    if ((st.stage || 1) >= 20) unlock(user, "code-master");
+    if ((st.codesSolved || 0) >= 25) unlock(user, "code-25");
+  }
 }
 
 function parseCookies(header) {
@@ -235,23 +289,57 @@ const server = http.createServer(async (req, res) => {
       const userId = getSessionUserId(req);
       if (!userId) return sendJson(res, 401, { error: "Authentication required" });
       const body = await readBody(req);
-      const gameId = String(body.gameId || "");
-      const score = Number(body.score);
-      const xpGain = Math.max(0, Math.min(50, Number(body.xp) || 0));
-      const coinGain = Math.max(0, Math.min(20, Number(body.coins) || 0));
+      const gameId = String(body.gameId || body.game || "");
       if (!GAMES.some((g) => g.id === gameId)) return sendJson(res, 400, { error: "Unknown game." });
-      if (!Number.isFinite(score)) return sendJson(res, 400, { error: "Invalid score." });
+      let score = Number(body.score);
+      if (!Number.isFinite(score) || score < 0) return sendJson(res, 400, { error: "Invalid score." });
+      const cap = SCORE_CAP[gameId] || 1000;
+      score = Math.min(Math.floor(score), cap);
+      const completed = body.completed === true || body.completed === "true";
+      const stage = Math.max(0, Math.min(50, Math.floor(Number(body.stage) || 0)));
+      const mode = String(body.mode || "").slice(0, 32);
+      const time = Number.isFinite(Number(body.time)) ? Math.max(0, Number(body.time)) : null;
+      const accuracy = Number.isFinite(Number(body.accuracy)) ? Math.max(0, Math.min(100, Number(body.accuracy))) : null;
+      const xpGain = Math.max(0, Math.min(50, Math.floor(score / 40) + (completed ? 8 : 2)));
+      const coinGain = Math.max(0, Math.min(20, Math.floor(score / 120) + (completed ? 2 : 0)));
       const users = readJson(USERS_FILE);
       const user = users.find((u) => u.id === userId);
       if (!user) return sendJson(res, 401, { error: "Authentication required" });
       user.xp = (user.xp || 0) + xpGain;
       user.coins = (user.coins || 0) + coinGain;
       user.stats = user.stats || {};
-      user.stats[gameId] = user.stats[gameId] || { plays: 0, best: null };
-      user.stats[gameId].plays += 1;
-      if (user.stats[gameId].best === null || score > user.stats[gameId].best) {
-        user.stats[gameId].best = score;
+      const st = user.stats[gameId] || { plays: 0, best: null, completions: 0, stage: 1 };
+      st.plays += 1;
+      if (st.best === null || score > st.best) st.best = score;
+      if (completed) {
+        st.completions = (st.completions || 0) + 1;
+        st.stage = Math.max(st.stage || 1, Math.min(50, stage + 1) || 1);
       }
+      if (mode) st.lastMode = mode;
+      if (time !== null) st.bestTime = st.bestTime == null ? time : Math.min(st.bestTime, time);
+      if (accuracy !== null) st.accuracy = Math.max(st.accuracy || 0, accuracy);
+      if (Number.isFinite(Number(body.targetsHit))) st.targetsHit = (st.targetsHit || 0) + Math.max(0, Math.floor(Number(body.targetsHit)));
+      if (Number.isFinite(Number(body.correctAnswers))) st.correctAnswers = (st.correctAnswers || 0) + Math.max(0, Math.floor(Number(body.correctAnswers)));
+      if (completed && gameId === "patternmaster") st.patternsSolved = (st.patternsSolved || 0) + 1;
+      if (completed && gameId === "codebreaker") st.codesSolved = (st.codesSolved || 0) + 1;
+      if (completed && gameId === "minirace") st.racesPlayed = (st.racesPlayed || 0) + 1;
+      user.stats[gameId] = st;
+      user.streaks = user.streaks || {};
+      const today = new Date().toISOString().slice(0, 10);
+      const prev = user.streaks.global || { count: 0, last: null };
+      if (completed) {
+        if (prev.last === today) {
+          /* same day, keep count */
+        } else if (prev.last && daysBetween(prev.last, today) === 1) {
+          prev.count += 1;
+        } else if (prev.last !== today) {
+          prev.count = 1;
+        }
+        prev.last = today;
+      }
+      user.streaks.global = prev;
+      user.achievements = Array.isArray(user.achievements) ? user.achievements : [];
+      grantAchievements(user, gameId, st, completed);
       const scores = readJson(SCORES_FILE);
       scores.push({
         id: "s_" + Date.now().toString(36),
@@ -259,11 +347,15 @@ const server = http.createServer(async (req, res) => {
         username: user.username,
         gameId,
         score,
+        stage: stage || null,
+        mode: mode || null,
+        time,
+        completed,
         createdAt: new Date().toISOString()
       });
       writeJson(SCORES_FILE, scores);
       writeJson(USERS_FILE, users);
-      return sendJson(res, 200, { user: withLevel(user) });
+      return sendJson(res, 200, { user: withLevel(user), awarded: { xp: xpGain, coins: coinGain } });
     }
 
     if (method === "GET" && pathname === "/api/leaderboard") {

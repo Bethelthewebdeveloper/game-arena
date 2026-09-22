@@ -56,15 +56,12 @@
       ["rps", "✊", "Rock Paper Scissors", "Win the series."],
       ["wordclash", "🔤", "Word Clash", "Unscramble before time ends."],
       ["trivia", "❓", "Trivia Rush", "Answer and keep the streak."],
+      ["minirace", "🏎️", "Mini Race", "Steer, dodge and finish the track."],
+      ["targetstrike", "🎯", "Target Strike", "Hit moving targets under time."],
+      ["patternmaster", "🧩", "Pattern Master", "Watch the pattern, then rebuild it."],
+      ["numberrush", "🔢", "Number Rush", "Solve number challenges against the clock."],
+      ["codebreaker", "🔐", "Code Breaker", "Crack the hidden code with clues."],
     ];
-    document.getElementById("games").innerHTML = cards.map(([id, icon, name, desc]) => `
-      <article class="rounded-2xl border border-white/10 bg-white/[0.03] p-5">
-        <div class="text-2xl">${icon}</div>
-        <h2 class="mt-3 font-semibold text-white">${name}</h2>
-        <p class="mt-1 text-sm text-slate-400">${desc}</p>
-        <a class="mt-4 inline-block rounded-lg bg-cyan-400/15 px-3 py-2 text-sm font-semibold text-cyan-100 hover:bg-cyan-400/25" href="${Arena.GAMES[id].path}">Play</a>
-      </article>
-    `).join("");
 
     Arena.getMe().then((user) => {
       if (!user) {
@@ -77,6 +74,21 @@
       document.getElementById("stat-xp").textContent = (user.xp || 0) + " (" + user.xpIntoLevel + "/100)";
       document.getElementById("xp-bar").style.width = user.xpIntoLevel + "%";
       document.getElementById("stat-coins").textContent = user.coins || 0;
+      const stats = user.stats || {};
+      document.getElementById("games").innerHTML = cards.map(([id, icon, name, desc]) => {
+        const st = stats[id] || {};
+        const stage = st.stage || 1;
+        const best = st.best == null ? "—" : st.best;
+        const extra = st.bestTime != null ? " · Best time " + Number(st.bestTime).toFixed(2) + "s" : "";
+        return `
+      <article class="rounded-2xl border border-white/10 bg-white/[0.03] p-5">
+        <div class="text-2xl">${icon}</div>
+        <h2 class="mt-3 font-semibold text-white">${name}</h2>
+        <p class="mt-1 text-sm text-slate-400">${desc}</p>
+        <p class="mt-2 text-xs text-slate-500">Stage ${stage} · Best ${best}${extra}</p>
+        <a class="mt-4 inline-block rounded-lg bg-cyan-400/15 px-3 py-2 text-sm font-semibold text-cyan-100 hover:bg-cyan-400/25" href="${Arena.GAMES[id].path}">Play</a>
+      </article>`;
+      }).join("");
     });
     document.getElementById("logout").addEventListener("click", async () => {
       await fetch("/api/logout", { method: "POST" });

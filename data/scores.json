@@ -1,42 +1,122 @@
 [
   {
-    "id": "s_mucs6ajs",
-    "userId": "u_mucs5mtz2e6661",
-    "username": "sam",
-    "gameId": "penalty",
-    "score": 3,
-    "createdAt": "2026-09-22T14:39:57.160Z"
+    "id": "s_mucta3eg",
+    "userId": "u_mucta2ya7862ef",
+    "username": "phase5ok",
+    "gameId": "minirace",
+    "score": 850,
+    "stage": 8,
+    "mode": "time-trial",
+    "time": 18.42,
+    "completed": true,
+    "createdAt": "2026-09-22T15:10:54.136Z"
   },
   {
-    "id": "s_mucsconc",
-    "userId": "u_mucs5mtz2e6661",
-    "username": "sam",
-    "gameId": "reflex",
-    "score": 0,
-    "createdAt": "2026-09-22T14:44:55.368Z"
+    "id": "s_mucta7at",
+    "userId": "u_mucta2ya7862ef",
+    "username": "phase5ok",
+    "gameId": "minirace",
+    "score": 2000,
+    "stage": 1,
+    "mode": null,
+    "time": null,
+    "completed": true,
+    "createdAt": "2026-09-22T15:10:59.189Z"
   },
   {
-    "id": "s_mucsd8xx",
-    "userId": "u_mucs5mtz2e6661",
-    "username": "sam",
-    "gameId": "trivia",
-    "score": 0,
-    "createdAt": "2026-09-22T14:45:21.669Z"
-  },
-  {
-    "id": "s_mucsdqq9",
-    "userId": "u_mucs5mtz2e6661",
-    "username": "sam",
-    "gameId": "penalty",
-    "score": 2,
-    "createdAt": "2026-09-22T14:45:44.721Z"
-  },
-  {
-    "id": "s_mucsexyh",
-    "userId": "u_mucs5mtz2e6661",
-    "username": "sam",
+    "id": "s_mucta846",
+    "userId": "u_mucta2ya7862ef",
+    "username": "phase5ok",
     "gameId": "riddle",
-    "score": 20,
-    "createdAt": "2026-09-22T14:46:40.745Z"
+    "score": 30,
+    "stage": null,
+    "mode": null,
+    "time": null,
+    "completed": false,
+    "createdAt": "2026-09-22T15:11:00.246Z"
+  },
+  {
+    "id": "s_mud0ivv7",
+    "userId": "u_mud0hhwcc1fd82",
+    "username": "sam",
+    "gameId": "minirace",
+    "score": 1800,
+    "stage": 1,
+    "mode": "quick",
+    "time": 9.064900000005961,
+    "completed": true,
+    "createdAt": "2026-09-22T18:33:41.587Z"
+  },
+  {
+    "id": "s_mud0j5qf",
+    "userId": "u_mud0hhwcc1fd82",
+    "username": "sam",
+    "gameId": "minirace",
+    "score": 1815,
+    "stage": 2,
+    "mode": "quick",
+    "time": 8.37529999999702,
+    "completed": true,
+    "createdAt": "2026-09-22T18:33:54.375Z"
+  },
+  {
+    "id": "s_mud0jgye",
+    "userId": "u_mud0hhwcc1fd82",
+    "username": "sam",
+    "gameId": "minirace",
+    "score": 1637,
+    "stage": 3,
+    "mode": "quick",
+    "time": 9.20289999999106,
+    "completed": true,
+    "createdAt": "2026-09-22T18:34:08.918Z"
+  },
+  {
+    "id": "s_mud0jxql",
+    "userId": "u_mud0hhwcc1fd82",
+    "username": "sam",
+    "gameId": "targetstrike",
+    "score": 800,
+    "stage": 1,
+    "mode": "quick",
+    "time": null,
+    "completed": true,
+    "createdAt": "2026-09-22T18:34:30.669Z"
+  },
+  {
+    "id": "s_mud0k8wi",
+    "userId": "u_mud0hhwcc1fd82",
+    "username": "sam",
+    "gameId": "targetstrike",
+    "score": 872,
+    "stage": 2,
+    "mode": "quick",
+    "time": null,
+    "completed": true,
+    "createdAt": "2026-09-22T18:34:45.138Z"
+  },
+  {
+    "id": "s_mud0l4rw",
+    "userId": "u_mud0hhwcc1fd82",
+    "username": "sam",
+    "gameId": "numberrush",
+    "score": 80,
+    "stage": 1,
+    "mode": "quick",
+    "time": null,
+    "completed": false,
+    "createdAt": "2026-09-22T18:35:26.444Z"
+  },
+  {
+    "id": "s_mud0mrjw",
+    "userId": "u_mud0hhwcc1fd82",
+    "username": "sam",
+    "gameId": "penalty",
+    "score": 5,
+    "stage": null,
+    "mode": null,
+    "time": null,
+    "completed": false,
+    "createdAt": "2026-09-22T18:36:42.620Z"
   }
 ]

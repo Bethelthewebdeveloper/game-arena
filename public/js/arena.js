@@ -7,6 +7,11 @@
     rps: { path: "/games/rps.html", name: "Rock Paper Scissors" },
     wordclash: { path: "/games/wordclash.html", name: "Word Clash" },
     trivia: { path: "/games/trivia.html", name: "Trivia Rush" },
+    minirace: { path: "/games/minirace.html", name: "Mini Race" },
+    targetstrike: { path: "/games/targetstrike.html", name: "Target Strike" },
+    patternmaster: { path: "/games/patternmaster.html", name: "Pattern Master" },
+    numberrush: { path: "/games/numberrush.html", name: "Number Rush" },
+    codebreaker: { path: "/games/codebreaker.html", name: "Code Breaker" },
   };
 
   async function getMe() {

@@ -243,20 +243,59 @@
             <p class="mt-2 text-sm leading-relaxed text-slate-400">Unscramble, solve and complete word challenges before time runs out.</p>
             <button type="button" class="focus-ring mt-5 w-full rounded-lg bg-lime-400/15 px-4 py-2.5 text-sm font-semibold text-lime-100 hover:bg-lime-400/25" onclick="Arena.goPlay('wordclash')">PLAY NOW</button>
           </article>
-          <article class="game-card glow-violet rounded-2xl border border-violet-400/25 bg-[#120f1c] p-5 sm:col-span-2 lg:col-span-3">
-            <div class="flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
-              <div class="flex items-start gap-4">
-                <div class="grid h-12 w-12 shrink-0 place-items-center rounded-xl bg-violet-400/15 text-2xl" aria-hidden="true">❓</div>
-                <div>
-                  <div class="flex flex-wrap items-center gap-2">
-                    <h3 class="text-lg font-semibold text-white">Trivia Rush</h3>
-                    <span class="rounded-full border border-violet-400/20 px-2 py-0.5 text-[11px] uppercase tracking-wide text-violet-200">Hard</span>
-                  </div>
-                  <p class="mt-2 max-w-2xl text-sm leading-relaxed text-slate-400">Answer quickly, build your streak and test what you know across different categories.</p>
-                </div>
-              </div>
-              <button type="button" class="focus-ring w-full shrink-0 rounded-lg bg-violet-400/20 px-5 py-2.5 text-sm font-semibold text-violet-100 hover:bg-violet-400/30 sm:w-auto" onclick="Arena.goPlay('trivia')">PLAY NOW</button>
+          <article class="game-card rounded-2xl border border-violet-400/25 bg-[#120f1c] p-5">
+            <div class="flex items-start justify-between">
+              <div class="grid h-12 w-12 place-items-center rounded-xl bg-violet-400/15 text-2xl" aria-hidden="true">❓</div>
+              <span class="rounded-full border border-violet-400/20 px-2 py-0.5 text-[11px] uppercase tracking-wide text-violet-200">Hard</span>
             </div>
+            <h3 class="mt-4 text-lg font-semibold text-white">Trivia Rush</h3>
+            <p class="mt-2 text-sm leading-relaxed text-slate-400">Answer quickly, build your streak and test what you know across different categories.</p>
+            <button type="button" class="focus-ring mt-5 w-full rounded-lg bg-violet-400/15 px-4 py-2.5 text-sm font-semibold text-violet-100 hover:bg-violet-400/25" onclick="Arena.goPlay('trivia')">PLAY NOW</button>
+          </article>
+          <article class="game-card rounded-2xl border border-orange-400/20 bg-[#18120c] p-5">
+            <div class="flex items-start justify-between">
+              <div class="grid h-12 w-12 place-items-center rounded-xl bg-orange-400/15 text-2xl" aria-hidden="true">🏎️</div>
+              <span class="rounded-full border border-orange-400/20 px-2 py-0.5 text-[11px] uppercase tracking-wide text-orange-200">Medium</span>
+            </div>
+            <h3 class="mt-4 text-lg font-semibold text-white">Mini Race</h3>
+            <p class="mt-2 text-sm leading-relaxed text-slate-400">Steer your car, stay on track, dodge hazards and beat the clock to the finish line.</p>
+            <button type="button" class="focus-ring mt-5 w-full rounded-lg bg-orange-400/15 px-4 py-2.5 text-sm font-semibold text-orange-100 hover:bg-orange-400/25" onclick="Arena.goPlay('minirace')">PLAY NOW</button>
+          </article>
+          <article class="game-card rounded-2xl border border-red-400/20 bg-[#180c0c] p-5">
+            <div class="flex items-start justify-between">
+              <div class="grid h-12 w-12 place-items-center rounded-xl bg-red-400/15 text-2xl" aria-hidden="true">🎯</div>
+              <span class="rounded-full border border-red-400/20 px-2 py-0.5 text-[11px] uppercase tracking-wide text-red-200">Hard</span>
+            </div>
+            <h3 class="mt-4 text-lg font-semibold text-white">Target Strike</h3>
+            <p class="mt-2 text-sm leading-relaxed text-slate-400">Tap targets as they appear. Later stages move faster, shrink, and vanish sooner.</p>
+            <button type="button" class="focus-ring mt-5 w-full rounded-lg bg-red-400/15 px-4 py-2.5 text-sm font-semibold text-red-100 hover:bg-red-400/25" onclick="Arena.goPlay('targetstrike')">PLAY NOW</button>
+          </article>
+          <article class="game-card rounded-2xl border border-teal-400/20 bg-[#0c1616] p-5">
+            <div class="flex items-start justify-between">
+              <div class="grid h-12 w-12 place-items-center rounded-xl bg-teal-400/15 text-2xl" aria-hidden="true">🧩</div>
+              <span class="rounded-full border border-teal-400/20 px-2 py-0.5 text-[11px] uppercase tracking-wide text-teal-200">Medium</span>
+            </div>
+            <h3 class="mt-4 text-lg font-semibold text-white">Pattern Master</h3>
+            <p class="mt-2 text-sm leading-relaxed text-slate-400">Study the grid, remember the pattern, then rebuild it before the round slips away.</p>
+            <button type="button" class="focus-ring mt-5 w-full rounded-lg bg-teal-400/15 px-4 py-2.5 text-sm font-semibold text-teal-100 hover:bg-teal-400/25" onclick="Arena.goPlay('patternmaster')">PLAY NOW</button>
+          </article>
+          <article class="game-card rounded-2xl border border-blue-400/20 bg-[#0c1220] p-5">
+            <div class="flex items-start justify-between">
+              <div class="grid h-12 w-12 place-items-center rounded-xl bg-blue-400/15 text-2xl" aria-hidden="true">🔢</div>
+              <span class="rounded-full border border-blue-400/20 px-2 py-0.5 text-[11px] uppercase tracking-wide text-blue-200">Medium</span>
+            </div>
+            <h3 class="mt-4 text-lg font-semibold text-white">Number Rush</h3>
+            <p class="mt-2 text-sm leading-relaxed text-slate-400">Solve arithmetic, comparisons and sequences against a single countdown timer.</p>
+            <button type="button" class="focus-ring mt-5 w-full rounded-lg bg-blue-400/15 px-4 py-2.5 text-sm font-semibold text-blue-100 hover:bg-blue-400/25" onclick="Arena.goPlay('numberrush')">PLAY NOW</button>
+          </article>
+          <article class="game-card glow-violet rounded-2xl border border-indigo-400/25 bg-[#101018] p-5">
+            <div class="flex items-start justify-between">
+              <div class="grid h-12 w-12 place-items-center rounded-xl bg-indigo-400/15 text-2xl" aria-hidden="true">🔐</div>
+              <span class="rounded-full border border-indigo-400/20 px-2 py-0.5 text-[11px] uppercase tracking-wide text-indigo-200">Hard</span>
+            </div>
+            <h3 class="mt-4 text-lg font-semibold text-white">Code Breaker</h3>
+            <p class="mt-2 text-sm leading-relaxed text-slate-400">Guess the hidden code. Each attempt returns real position and digit clues.</p>
+            <button type="button" class="focus-ring mt-5 w-full rounded-lg bg-indigo-400/15 px-4 py-2.5 text-sm font-semibold text-indigo-100 hover:bg-indigo-400/25" onclick="Arena.goPlay('codebreaker')">PLAY NOW</button>
           </article>
         </div>
       </div>
@@ -475,6 +514,11 @@
       rps: "Rock Paper Scissors",
       wordclash: "Word Clash",
       trivia: "Trivia Rush",
+      minirace: "Mini Race",
+      targetstrike: "Target Strike",
+      patternmaster: "Pattern Master",
+      numberrush: "Number Rush",
+      codebreaker: "Code Breaker",
     };
 
     fetch("/api/leaderboard")
