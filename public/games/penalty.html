@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" /><meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Penalty Shootout — Game Arena</title>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600&display=swap" rel="stylesheet" />
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="min-h-screen bg-[#07140f] font-sans text-slate-200">
+  <main class="mx-auto max-w-xl px-4 py-10">
+    <p class="text-xs uppercase tracking-widest text-emerald-300">Game Arena · Penalty Shootout</p>
+    <h1 class="mt-2 text-2xl font-semibold text-white">Pick your shot</h1>
+    <p class="mt-2 text-sm text-slate-400">Goals: <span id="goals">0</span> / 5</p>
+    <div class="relative mt-6 h-48 rounded-2xl border border-emerald-400/20 bg-emerald-950/40">
+      <div class="absolute inset-x-8 top-4 h-28 rounded-t-xl border-2 border-white/30"></div>
+      <p id="keeper" class="absolute top-10 text-3xl transition-all" style="left:45%">🧤</p>
+    </div>
+    <div class="mt-4 grid grid-cols-3 gap-2">
+      <button data-dir="left" class="rounded-xl bg-emerald-400/20 py-3">Left</button>
+      <button data-dir="center" class="rounded-xl bg-emerald-400/20 py-3">Center</button>
+      <button data-dir="right" class="rounded-xl bg-emerald-400/20 py-3">Right</button>
+    </div>
+    <p id="msg" class="mt-4 text-sm text-slate-400">Aim and shoot.</p>
+  </main>
+  <script src="/js/arena.js"></script>
+  <script src="/js/game-shell.js"></script>
+  <script>
+    GameShell.mountChrome("PENALTY SHOOTOUT");
+    GameShell.guard();
+    let shot = 0, goals = 0, busy = false;
+    const dirs = ["left", "center", "right"];
+    const pos = { left: "18%", center: "45%", right: "72%" };
+    document.querySelectorAll("[data-dir]").forEach((btn) => {
+      btn.onclick = async () => {
+        if (busy || shot >= 5) return;
+        busy = true;
+        const dive = dirs[Math.floor(Math.random() * 3)];
+        document.getElementById("keeper").style.left = pos[dive];
+        const goal = btn.dataset.dir !== dive;
+        if (goal) goals += 1;
+        shot += 1;
+        document.getElementById("goals").textContent = goals;
+        document.getElementById("msg").textContent = goal ? "Goal!" : "Saved!";
+        if (shot >= 5) {
+          document.getElementById("msg").textContent = "Final: " + goals + " / 5";
+          await GameShell.submitRun("penalty", goals, goals * 6, goals);
+        }
+        busy = false;
+      };
+    });
+  </script>
+</body>
+</html>

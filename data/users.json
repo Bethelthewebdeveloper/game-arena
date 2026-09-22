@@ -1,0 +1,31 @@
+[
+  {
+    "id": "u_mucs5mtz2e6661",
+    "username": "sam",
+    "passwordHash": "7de3cc3159a622e69c2a06c3a0af8d51:20e68a70556de1234318666d2d0e42d661461ba36fbd183b9f33f710d983ae41",
+    "createdAt": "2026-09-22T14:39:26.547Z",
+    "xp": 50,
+    "coins": 7,
+    "achievements": [],
+    "streaks": {},
+    "stats": {
+      "penalty": {
+        "plays": 2,
+        "best": 3
+      },
+      "reflex": {
+        "plays": 1,
+        "best": 0
+      },
+      "trivia": {
+        "plays": 1,
+        "best": 0
+      },
+      "riddle": {
+        "plays": 1,
+        "best": 20
+      }
+    },
+    "plan": "free"
+  }
+]

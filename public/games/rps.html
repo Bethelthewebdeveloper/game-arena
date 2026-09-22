@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" /><meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Rock Paper Scissors — Game Arena</title>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600&display=swap" rel="stylesheet" />
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="min-h-screen bg-[#140b18] font-sans text-slate-200">
+  <main class="mx-auto max-w-xl px-4 py-10">
+    <p class="text-xs uppercase tracking-widest text-fuchsia-300">Game Arena · Rock Paper Scissors</p>
+    <h1 class="mt-2 text-2xl font-semibold text-white">Best of five</h1>
+    <p class="mt-2 text-sm text-slate-400">You <span id="you">0</span> — <span id="cpu">0</span> CPU</p>
+    <div class="mt-6 grid grid-cols-3 gap-2">
+      <button data-m="rock" class="rounded-2xl border border-fuchsia-400/20 py-6 text-3xl" aria-label="Rock">✊</button>
+      <button data-m="paper" class="rounded-2xl border border-fuchsia-400/20 py-6 text-3xl" aria-label="Paper">✋</button>
+      <button data-m="scissors" class="rounded-2xl border border-fuchsia-400/20 py-6 text-3xl" aria-label="Scissors">✌️</button>
+    </div>
+    <p id="msg" class="mt-4 text-sm text-slate-400">Choose your move.</p>
+  </main>
+  <script src="/js/arena.js"></script>
+  <script src="/js/game-shell.js"></script>
+  <script>
+    GameShell.mountChrome("ROCK PAPER SCISSORS");
+    GameShell.guard();
+    const beats = { rock: "scissors", paper: "rock", scissors: "paper" };
+    const moves = ["rock", "paper", "scissors"];
+    let you = 0, cpu = 0, over = false;
+    document.querySelectorAll("[data-m]").forEach((btn) => {
+      btn.onclick = async () => {
+        if (over) return;
+        const mine = btn.dataset.m;
+        const theirs = moves[Math.floor(Math.random() * 3)];
+        if (mine === theirs) document.getElementById("msg").textContent = "Draw. CPU chose " + theirs + ".";
+        else if (beats[mine] === theirs) {
+          you += 1; document.getElementById("msg").textContent = "You win the round.";
+        } else {
+          cpu += 1; document.getElementById("msg").textContent = "CPU wins the round with " + theirs + ".";
+        }
+        document.getElementById("you").textContent = you;
+        document.getElementById("cpu").textContent = cpu;
+        if (you === 3 || cpu === 3) {
+          over = true;
+          const score = you * 10;
+          document.getElementById("msg").textContent = you > cpu ? "You take the match." : "CPU takes the match.";
+          await GameShell.submitRun("rps", score, you * 8, you);
+        }
+      };
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,42 @@
+[
+  {
+    "id": "s_mucs6ajs",
+    "userId": "u_mucs5mtz2e6661",
+    "username": "sam",
+    "gameId": "penalty",
+    "score": 3,
+    "createdAt": "2026-09-22T14:39:57.160Z"
+  },
+  {
+    "id": "s_mucsconc",
+    "userId": "u_mucs5mtz2e6661",
+    "username": "sam",
+    "gameId": "reflex",
+    "score": 0,
+    "createdAt": "2026-09-22T14:44:55.368Z"
+  },
+  {
+    "id": "s_mucsd8xx",
+    "userId": "u_mucs5mtz2e6661",
+    "username": "sam",
+    "gameId": "trivia",
+    "score": 0,
+    "createdAt": "2026-09-22T14:45:21.669Z"
+  },
+  {
+    "id": "s_mucsdqq9",
+    "userId": "u_mucs5mtz2e6661",
+    "username": "sam",
+    "gameId": "penalty",
+    "score": 2,
+    "createdAt": "2026-09-22T14:45:44.721Z"
+  },
+  {
+    "id": "s_mucsexyh",
+    "userId": "u_mucs5mtz2e6661",
+    "username": "sam",
+    "gameId": "riddle",
+    "score": 20,
+    "createdAt": "2026-09-22T14:46:40.745Z"
+  }
+]

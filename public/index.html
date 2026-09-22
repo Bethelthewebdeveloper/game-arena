@@ -1,0 +1,501 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Game Arena — Play. Compete. Level Up.</title>
+  <meta name="description" content="Game Arena is a growing collection of fast, challenging and replayable games built for players who love to test their skills." />
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%23070b16'/%3E%3Cpath d='M18 40l14-20 14 20H18z' fill='%2322d3ee'/%3E%3Ccircle cx='32' cy='24' r='4' fill='%23a855f7'/%3E%3C/svg%3E" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@600;700;800&family=Outfit:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            display: ["Orbitron", "sans-serif"],
+            sans: ["Outfit", "system-ui", "sans-serif"],
+          },
+          colors: {
+            arena: {
+              bg: "#070b16",
+              panel: "#0d1426",
+              line: "#1c2744",
+              cyan: "#22d3ee",
+              violet: "#a855f7",
+              gold: "#fbbf24",
+            },
+          },
+        },
+      },
+    };
+  </script>
+  <style>
+    :root { color-scheme: dark; }
+    html { scroll-behavior: smooth; }
+    body { background: #070b16; }
+    .font-display { letter-spacing: 0.04em; }
+    .hero-grid {
+      background-image:
+        linear-gradient(rgba(34, 211, 238, 0.06) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(34, 211, 238, 0.06) 1px, transparent 1px);
+      background-size: 48px 48px;
+      mask-image: radial-gradient(ellipse 70% 60% at 50% 20%, #000 30%, transparent 75%);
+    }
+    .glow-cyan { box-shadow: 0 0 0 1px rgba(34,211,238,.25), 0 10px 40px rgba(34,211,238,.12); }
+    .glow-violet { box-shadow: 0 0 0 1px rgba(168,85,247,.28), 0 10px 40px rgba(168,85,247,.12); }
+    .orb {
+      position: absolute;
+      border-radius: 9999px;
+      filter: blur(50px);
+      pointer-events: none;
+      opacity: 0.45;
+    }
+    .game-card { transition: transform .22s ease, box-shadow .22s ease, border-color .22s ease; }
+    .game-card:hover { transform: translateY(-6px); }
+    .float-card {
+      animation: floatY 5.5s ease-in-out infinite;
+    }
+    .float-card:nth-child(2) { animation-delay: -1.4s; }
+    .float-card:nth-child(3) { animation-delay: -2.6s; }
+    .float-card:nth-child(4) { animation-delay: -0.8s; }
+    .float-card:nth-child(5) { animation-delay: -3.2s; }
+    .float-card:nth-child(6) { animation-delay: -2s; }
+    .float-card:nth-child(7) { animation-delay: -4s; }
+    @keyframes floatY {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-8px); }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .float-card, .orb { animation: none !important; }
+      html { scroll-behavior: auto; }
+    }
+    .focus-ring:focus-visible {
+      outline: 2px solid #22d3ee;
+      outline-offset: 3px;
+    }
+    .nav-blur {
+      background: rgba(7, 11, 22, 0.78);
+      backdrop-filter: blur(16px);
+    }
+  </style>
+</head>
+<body class="font-sans text-slate-200 antialiased">
+  <a href="#main" class="sr-only focus:not-sr-only focus:fixed focus:top-3 focus:left-3 focus:z-[80] focus:bg-cyan-400 focus:text-slate-950 focus:px-3 focus:py-2 focus:rounded-md">Skip to content</a>
+
+  <header class="fixed inset-x-0 top-0 z-50 nav-blur border-b border-white/5">
+    <nav class="mx-auto flex max-w-6xl items-center justify-between gap-3 px-4 py-3" aria-label="Primary">
+      <a href="#home" class="focus-ring flex items-center gap-2.5 rounded-lg">
+        <span class="grid h-9 w-9 place-items-center rounded-xl bg-gradient-to-br from-cyan-400 to-violet-500 text-slate-950 shadow-[0_0_20px_rgba(34,211,238,.35)]" aria-hidden="true">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M4 16l8-12 8 12H4z" fill="currentColor"/></svg>
+        </span>
+        <span class="font-display text-sm font-bold tracking-wider text-white">GAME ARENA</span>
+      </a>
+      <div class="hidden items-center gap-6 text-sm text-slate-300 md:flex">
+        <a href="#home" class="focus-ring rounded hover:text-white">Home</a>
+        <a href="#games" class="focus-ring rounded hover:text-white">Games</a>
+        <a href="#how" class="focus-ring rounded hover:text-white">How It Works</a>
+      </div>
+      <div class="flex items-center gap-2">
+        <a href="/login" data-auth-guest class="focus-ring hidden rounded-lg px-3 py-2 text-sm text-slate-200 hover:text-white sm:inline">Login</a>
+        <a href="/signup" data-auth-guest class="focus-ring rounded-lg bg-white/10 px-3 py-2 text-sm font-medium text-white hover:bg-white/15">Sign Up</a>
+        <button type="button" data-auth-guest class="focus-ring hidden rounded-lg bg-gradient-to-r from-cyan-400 to-violet-500 px-3 py-2 text-sm font-semibold text-slate-950 shadow-[0_0_24px_rgba(34,211,238,.25)] sm:inline" onclick="Arena.goArena()">Play Now</button>
+        <a href="/dashboard" data-auth-user hidden class="focus-ring rounded-lg bg-gradient-to-r from-cyan-400 to-violet-500 px-3 py-2 text-sm font-semibold text-slate-950">Enter Arena</a>
+        <button type="button" class="focus-ring grid h-10 w-10 place-items-center rounded-lg border border-white/10 md:hidden" aria-expanded="false" aria-controls="mobile-nav" id="menu-btn" aria-label="Open menu">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
+        </button>
+      </div>
+    </nav>
+    <div id="mobile-nav" hidden class="border-t border-white/5 px-4 py-3 md:hidden">
+      <div class="flex flex-col gap-1 text-sm">
+        <a href="#home" class="focus-ring rounded-lg px-3 py-2 hover:bg-white/5">Home</a>
+        <a href="#games" class="focus-ring rounded-lg px-3 py-2 hover:bg-white/5">Games</a>
+        <a href="#how" class="focus-ring rounded-lg px-3 py-2 hover:bg-white/5">How It Works</a>
+        <a href="/login" data-auth-guest class="focus-ring rounded-lg px-3 py-2 hover:bg-white/5">Login</a>
+        <a href="/signup" data-auth-guest class="focus-ring rounded-lg px-3 py-2 hover:bg-white/5">Sign Up</a>
+        <a href="/dashboard" data-auth-user hidden class="focus-ring rounded-lg px-3 py-2 hover:bg-white/5">Dashboard</a>
+      </div>
+    </div>
+  </header>
+
+  <main id="main">
+    <section id="home" class="relative overflow-hidden pt-24">
+      <div class="hero-grid pointer-events-none absolute inset-0"></div>
+      <div class="orb left-[-8%] top-10 h-64 w-64 bg-cyan-500/30"></div>
+      <div class="orb right-[-6%] top-24 h-72 w-72 bg-violet-600/25"></div>
+      <div class="relative mx-auto grid max-w-6xl items-center gap-10 px-4 pb-16 pt-10 lg:grid-cols-2 lg:pb-24 lg:pt-16">
+        <div>
+          <p class="mb-4 inline-flex items-center gap-2 rounded-full border border-cyan-400/20 bg-cyan-400/10 px-3 py-1 text-xs font-medium uppercase tracking-widest text-cyan-300">Skill-based mini games</p>
+          <h1 class="font-display text-4xl font-extrabold leading-tight text-white sm:text-5xl lg:text-6xl">PLAY.<br>COMPETE.<br><span class="bg-gradient-to-r from-cyan-300 via-white to-violet-400 bg-clip-text text-transparent">LEVEL UP.</span></h1>
+          <p class="mt-5 max-w-xl text-base leading-relaxed text-slate-300 sm:text-lg">Welcome to Game Arena — a growing collection of fast, challenging and replayable games built for players who love to test their skills.</p>
+          <div class="mt-8 flex flex-wrap gap-3">
+            <button type="button" class="focus-ring rounded-xl bg-gradient-to-r from-cyan-400 to-violet-500 px-6 py-3 text-sm font-semibold text-slate-950 shadow-[0_0_30px_rgba(34,211,238,.28)]" onclick="Arena.goArena()">PLAY NOW</button>
+            <a href="#games" class="focus-ring rounded-xl border border-white/15 bg-white/5 px-6 py-3 text-sm font-semibold text-white hover:bg-white/10">EXPLORE GAMES</a>
+          </div>
+        </div>
+        <div class="relative min-h-[320px] sm:min-h-[380px]" aria-hidden="true">
+          <div class="absolute inset-0 rounded-[2rem] border border-white/10 bg-gradient-to-br from-white/5 to-transparent p-4">
+            <div class="grid h-full grid-cols-2 gap-3 sm:grid-cols-3">
+              <article class="float-card rounded-2xl border border-amber-300/20 bg-[#14101a] p-3">
+                <div class="mb-2 grid h-9 w-9 place-items-center rounded-lg bg-amber-400/15 text-lg">🧩</div>
+                <p class="text-xs font-semibold text-white">Riddle</p>
+                <p class="text-[11px] text-slate-400">Beat the clock</p>
+              </article>
+              <article class="float-card rounded-2xl border border-rose-400/20 bg-[#180f16] p-3">
+                <div class="mb-2 grid h-9 w-9 place-items-center rounded-lg bg-rose-400/15 text-lg">⚡</div>
+                <p class="text-xs font-semibold text-white">Reflex</p>
+                <p class="text-[11px] text-slate-400">Hit the target</p>
+              </article>
+              <article class="float-card rounded-2xl border border-sky-400/20 bg-[#0d1520] p-3">
+                <div class="mb-2 grid h-9 w-9 place-items-center rounded-lg bg-sky-400/15 text-lg">🧠</div>
+                <p class="text-xs font-semibold text-white">Memory</p>
+                <p class="text-[11px] text-slate-400">Match the cards</p>
+              </article>
+              <article class="float-card rounded-2xl border border-emerald-400/20 bg-[#0d1814] p-3">
+                <div class="mb-2 grid h-9 w-9 place-items-center rounded-lg bg-emerald-400/15 text-lg">⚽</div>
+                <p class="text-xs font-semibold text-white">Penalty</p>
+                <p class="text-[11px] text-slate-400">Aim and shoot</p>
+              </article>
+              <article class="float-card rounded-2xl border border-fuchsia-400/20 bg-[#160f1c] p-3">
+                <div class="mb-2 grid h-9 w-9 place-items-center rounded-lg bg-fuchsia-400/15 text-lg">✊</div>
+                <p class="text-xs font-semibold text-white">RPS</p>
+                <p class="text-[11px] text-slate-400">Call the move</p>
+              </article>
+              <article class="float-card rounded-2xl border border-lime-400/20 bg-[#12180d] p-3">
+                <div class="mb-2 grid h-9 w-9 place-items-center rounded-lg bg-lime-400/15 text-lg">🔤</div>
+                <p class="text-xs font-semibold text-white">Word Clash</p>
+                <p class="text-[11px] text-slate-400">Unscramble fast</p>
+              </article>
+              <article class="float-card col-span-2 rounded-2xl border border-violet-400/20 bg-[#120f22] p-3 sm:col-span-3">
+                <div class="flex items-center gap-3">
+                  <div class="grid h-9 w-9 place-items-center rounded-lg bg-violet-400/15 text-lg">❓</div>
+                  <div>
+                    <p class="text-xs font-semibold text-white">Trivia Rush</p>
+                    <p class="text-[11px] text-slate-400">Streaks across categories</p>
+                  </div>
+                </div>
+              </article>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="games" class="border-t border-white/5 bg-[#080d1a] py-16 sm:py-20">
+      <div class="mx-auto max-w-6xl px-4">
+        <p class="text-xs font-semibold uppercase tracking-[0.2em] text-cyan-300">The collection</p>
+        <h2 class="mt-2 font-display text-3xl font-bold text-white sm:text-4xl">EXPLORE THE ARENA</h2>
+        <p class="mt-3 max-w-xl text-slate-400">Choose your challenge. Test your skills. Earn progress.</p>
+        <div class="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          <article class="game-card glow-cyan rounded-2xl border border-amber-300/20 bg-[#111018] p-5">
+            <div class="flex items-start justify-between">
+              <div class="grid h-12 w-12 place-items-center rounded-xl bg-amber-400/15 text-2xl" aria-hidden="true">🧩</div>
+              <span class="rounded-full border border-amber-300/20 px-2 py-0.5 text-[11px] uppercase tracking-wide text-amber-200">Medium</span>
+            </div>
+            <h3 class="mt-4 text-lg font-semibold text-white">Riddle Game</h3>
+            <p class="mt-2 text-sm leading-relaxed text-slate-400">Solve clever riddles, beat the clock and push your problem-solving skills further.</p>
+            <button type="button" class="focus-ring mt-5 w-full rounded-lg bg-amber-400/15 px-4 py-2.5 text-sm font-semibold text-amber-100 hover:bg-amber-400/25" onclick="Arena.goPlay('riddle')">PLAY NOW</button>
+          </article>
+          <article class="game-card rounded-2xl border border-rose-400/20 bg-[#140e14] p-5">
+            <div class="flex items-start justify-between">
+              <div class="grid h-12 w-12 place-items-center rounded-xl bg-rose-400/15 text-2xl" aria-hidden="true">⚡</div>
+              <span class="rounded-full border border-rose-400/20 px-2 py-0.5 text-[11px] uppercase tracking-wide text-rose-200">Hard</span>
+            </div>
+            <h3 class="mt-4 text-lg font-semibold text-white">Reflex Challenge</h3>
+            <p class="mt-2 text-sm leading-relaxed text-slate-400">React fast, hit the target and see how quickly you can respond.</p>
+            <button type="button" class="focus-ring mt-5 w-full rounded-lg bg-rose-400/15 px-4 py-2.5 text-sm font-semibold text-rose-100 hover:bg-rose-400/25" onclick="Arena.goPlay('reflex')">PLAY NOW</button>
+          </article>
+          <article class="game-card rounded-2xl border border-sky-400/20 bg-[#0d141c] p-5">
+            <div class="flex items-start justify-between">
+              <div class="grid h-12 w-12 place-items-center rounded-xl bg-sky-400/15 text-2xl" aria-hidden="true">🧠</div>
+              <span class="rounded-full border border-sky-400/20 px-2 py-0.5 text-[11px] uppercase tracking-wide text-sky-200">Medium</span>
+            </div>
+            <h3 class="mt-4 text-lg font-semibold text-white">Memory Challenge</h3>
+            <p class="mt-2 text-sm leading-relaxed text-slate-400">Match the cards, improve your memory and complete increasingly difficult stages.</p>
+            <button type="button" class="focus-ring mt-5 w-full rounded-lg bg-sky-400/15 px-4 py-2.5 text-sm font-semibold text-sky-100 hover:bg-sky-400/25" onclick="Arena.goPlay('memory')">PLAY NOW</button>
+          </article>
+          <article class="game-card rounded-2xl border border-emerald-400/20 bg-[#0d1612] p-5">
+            <div class="flex items-start justify-between">
+              <div class="grid h-12 w-12 place-items-center rounded-xl bg-emerald-400/15 text-2xl" aria-hidden="true">⚽</div>
+              <span class="rounded-full border border-emerald-400/20 px-2 py-0.5 text-[11px] uppercase tracking-wide text-emerald-200">Easy</span>
+            </div>
+            <h3 class="mt-4 text-lg font-semibold text-white">Penalty Shootout</h3>
+            <p class="mt-2 text-sm leading-relaxed text-slate-400">Aim, shoot and beat the goalkeeper in a fast football penalty challenge.</p>
+            <button type="button" class="focus-ring mt-5 w-full rounded-lg bg-emerald-400/15 px-4 py-2.5 text-sm font-semibold text-emerald-100 hover:bg-emerald-400/25" onclick="Arena.goPlay('penalty')">PLAY NOW</button>
+          </article>
+          <article class="game-card rounded-2xl border border-fuchsia-400/20 bg-[#140e18] p-5">
+            <div class="flex items-start justify-between">
+              <div class="grid h-12 w-12 place-items-center rounded-xl bg-fuchsia-400/15 text-2xl" aria-hidden="true">✊</div>
+              <span class="rounded-full border border-fuchsia-400/20 px-2 py-0.5 text-[11px] uppercase tracking-wide text-fuchsia-200">Easy</span>
+            </div>
+            <h3 class="mt-4 text-lg font-semibold text-white">Rock Paper Scissors</h3>
+            <p class="mt-2 text-sm leading-relaxed text-slate-400">Choose your move, face the computer and fight through round after round.</p>
+            <button type="button" class="focus-ring mt-5 w-full rounded-lg bg-fuchsia-400/15 px-4 py-2.5 text-sm font-semibold text-fuchsia-100 hover:bg-fuchsia-400/25" onclick="Arena.goPlay('rps')">PLAY NOW</button>
+          </article>
+          <article class="game-card rounded-2xl border border-lime-400/20 bg-[#10160d] p-5">
+            <div class="flex items-start justify-between">
+              <div class="grid h-12 w-12 place-items-center rounded-xl bg-lime-400/15 text-2xl" aria-hidden="true">🔤</div>
+              <span class="rounded-full border border-lime-400/20 px-2 py-0.5 text-[11px] uppercase tracking-wide text-lime-200">Medium</span>
+            </div>
+            <h3 class="mt-4 text-lg font-semibold text-white">Word Clash</h3>
+            <p class="mt-2 text-sm leading-relaxed text-slate-400">Unscramble, solve and complete word challenges before time runs out.</p>
+            <button type="button" class="focus-ring mt-5 w-full rounded-lg bg-lime-400/15 px-4 py-2.5 text-sm font-semibold text-lime-100 hover:bg-lime-400/25" onclick="Arena.goPlay('wordclash')">PLAY NOW</button>
+          </article>
+          <article class="game-card glow-violet rounded-2xl border border-violet-400/25 bg-[#120f1c] p-5 sm:col-span-2 lg:col-span-3">
+            <div class="flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
+              <div class="flex items-start gap-4">
+                <div class="grid h-12 w-12 shrink-0 place-items-center rounded-xl bg-violet-400/15 text-2xl" aria-hidden="true">❓</div>
+                <div>
+                  <div class="flex flex-wrap items-center gap-2">
+                    <h3 class="text-lg font-semibold text-white">Trivia Rush</h3>
+                    <span class="rounded-full border border-violet-400/20 px-2 py-0.5 text-[11px] uppercase tracking-wide text-violet-200">Hard</span>
+                  </div>
+                  <p class="mt-2 max-w-2xl text-sm leading-relaxed text-slate-400">Answer quickly, build your streak and test what you know across different categories.</p>
+                </div>
+              </div>
+              <button type="button" class="focus-ring w-full shrink-0 rounded-lg bg-violet-400/20 px-5 py-2.5 text-sm font-semibold text-violet-100 hover:bg-violet-400/30 sm:w-auto" onclick="Arena.goPlay('trivia')">PLAY NOW</button>
+            </div>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section id="how" class="py-16 sm:py-20">
+      <div class="mx-auto max-w-6xl px-4">
+        <p class="text-xs font-semibold uppercase tracking-[0.2em] text-violet-300">The path</p>
+        <h2 class="mt-2 font-display text-3xl font-bold text-white sm:text-4xl">HOW IT WORKS</h2>
+        <div class="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          <article class="rounded-2xl border border-white/10 bg-white/[0.03] p-5">
+            <p class="font-display text-2xl text-cyan-300">01</p>
+            <h3 class="mt-3 font-semibold text-white">CREATE YOUR ACCOUNT</h3>
+            <p class="mt-2 text-sm text-slate-400">Sign up and create your player profile.</p>
+          </article>
+          <article class="rounded-2xl border border-white/10 bg-white/[0.03] p-5">
+            <p class="font-display text-2xl text-cyan-300">02</p>
+            <h3 class="mt-3 font-semibold text-white">CHOOSE YOUR GAME</h3>
+            <p class="mt-2 text-sm text-slate-400">Pick a challenge from the Game Arena.</p>
+          </article>
+          <article class="rounded-2xl border border-white/10 bg-white/[0.03] p-5">
+            <p class="font-display text-2xl text-cyan-300">03</p>
+            <h3 class="mt-3 font-semibold text-white">PLAY &amp; IMPROVE</h3>
+            <p class="mt-2 text-sm text-slate-400">Complete stages, improve your scores and challenge yourself.</p>
+          </article>
+          <article class="rounded-2xl border border-white/10 bg-white/[0.03] p-5">
+            <p class="font-display text-2xl text-cyan-300">04</p>
+            <h3 class="mt-3 font-semibold text-white">LEVEL UP</h3>
+            <p class="mt-2 text-sm text-slate-400">Earn XP and progress through the Game Arena.</p>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section id="progression" class="border-y border-white/5 bg-[#080d1a] py-16 sm:py-20">
+      <div class="mx-auto grid max-w-6xl items-center gap-10 px-4 lg:grid-cols-2">
+        <div>
+          <p class="text-xs font-semibold uppercase tracking-[0.2em] text-amber-300">Shared progress</p>
+          <h2 class="mt-2 font-display text-3xl font-bold text-white sm:text-4xl">ONE PLAYER.<br>ONE PROGRESSION SYSTEM.</h2>
+          <p class="mt-4 text-slate-400">Every game in Game Arena feeds the same player profile. Play riddles, reflexes, memory, words or trivia — your XP, level, coins, achievements, streaks and game statistics travel with you. Leaderboards use your real scores once you start competing.</p>
+        </div>
+        <div class="grid grid-cols-2 gap-3 sm:grid-cols-3">
+          <div class="rounded-2xl border border-cyan-400/20 bg-cyan-400/5 p-4">
+            <p class="text-xs uppercase tracking-wide text-cyan-300">XP</p>
+            <p class="mt-2 text-sm text-slate-300">Earned after each completed run.</p>
+          </div>
+          <div class="rounded-2xl border border-violet-400/20 bg-violet-400/5 p-4">
+            <p class="text-xs uppercase tracking-wide text-violet-300">Levels</p>
+            <p class="mt-2 text-sm text-slate-300">Advance as your XP grows.</p>
+          </div>
+          <div class="rounded-2xl border border-amber-400/20 bg-amber-400/5 p-4">
+            <p class="text-xs uppercase tracking-wide text-amber-300">Coins</p>
+            <p class="mt-2 text-sm text-slate-300">Collected from successful plays.</p>
+          </div>
+          <div class="rounded-2xl border border-emerald-400/20 bg-emerald-400/5 p-4">
+            <p class="text-xs uppercase tracking-wide text-emerald-300">Achievements</p>
+            <p class="mt-2 text-sm text-slate-300">Milestones tied to real play.</p>
+          </div>
+          <div class="rounded-2xl border border-rose-400/20 bg-rose-400/5 p-4">
+            <p class="text-xs uppercase tracking-wide text-rose-300">Streaks</p>
+            <p class="mt-2 text-sm text-slate-300">Track consistency in supported games.</p>
+          </div>
+          <div class="rounded-2xl border border-sky-400/20 bg-sky-400/5 p-4">
+            <p class="text-xs uppercase tracking-wide text-sky-300">Stats &amp; boards</p>
+            <p class="mt-2 text-sm text-slate-300">Personal records and live rankings.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="ai" class="py-16 sm:py-20">
+      <div class="mx-auto max-w-6xl px-4">
+        <div class="overflow-hidden rounded-3xl border border-amber-300/20 bg-gradient-to-br from-amber-400/10 via-[#121018] to-violet-500/10 p-6 sm:p-10">
+          <p class="text-xs font-semibold uppercase tracking-[0.2em] text-amber-300">Riddle Game</p>
+          <h2 class="mt-2 font-display text-3xl font-bold text-white sm:text-4xl">YOUR AI GAME COMPANION</h2>
+          <p class="mt-4 max-w-2xl text-slate-300">The AI companion lives inside the Riddle Game. It can offer hints, explain a riddle after you finish, suggest similar challenges, and help you practice — without playing the puzzle for you.</p>
+          <p class="mt-3 max-w-2xl text-sm text-slate-400">AI assistance is currently available in the Riddle Game experience, not as a chatbot on this page and not across every title yet.</p>
+          <button type="button" class="focus-ring mt-6 rounded-xl bg-amber-400 px-5 py-2.5 text-sm font-semibold text-slate-950" onclick="Arena.goPlay('riddle')">Open Riddle Game</button>
+        </div>
+      </div>
+    </section>
+
+    <section id="why" class="border-t border-white/5 bg-[#080d1a] py-16 sm:py-20">
+      <div class="mx-auto max-w-6xl px-4">
+        <h2 class="font-display text-3xl font-bold text-white sm:text-4xl">WHY GAME ARENA</h2>
+        <div class="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          <article class="rounded-2xl border border-white/10 p-5">
+            <p class="text-2xl" aria-hidden="true">🎮</p>
+            <h3 class="mt-3 font-semibold text-white">Multiple Games</h3>
+            <p class="mt-2 text-sm text-slate-400">Different challenges in one platform.</p>
+          </article>
+          <article class="rounded-2xl border border-white/10 p-5">
+            <p class="text-2xl" aria-hidden="true">⚡</p>
+            <h3 class="mt-3 font-semibold text-white">Fast Gameplay</h3>
+            <p class="mt-2 text-sm text-slate-400">Short sessions designed for quick challenges.</p>
+          </article>
+          <article class="rounded-2xl border border-white/10 p-5">
+            <p class="text-2xl" aria-hidden="true">🧠</p>
+            <h3 class="mt-3 font-semibold text-white">Skill-Based Challenges</h3>
+            <p class="mt-2 text-sm text-slate-400">Test memory, reaction, knowledge, words and decision-making.</p>
+          </article>
+          <article class="rounded-2xl border border-white/10 p-5">
+            <p class="text-2xl" aria-hidden="true">📈</p>
+            <h3 class="mt-3 font-semibold text-white">Progression</h3>
+            <p class="mt-2 text-sm text-slate-400">Build your player level as you play.</p>
+          </article>
+          <article class="rounded-2xl border border-white/10 p-5">
+            <p class="text-2xl" aria-hidden="true">🏆</p>
+            <h3 class="mt-3 font-semibold text-white">Achievements</h3>
+            <p class="mt-2 text-sm text-slate-400">Track milestones and accomplishments.</p>
+          </article>
+          <article class="rounded-2xl border border-white/10 p-5">
+            <p class="text-2xl" aria-hidden="true">🔄</p>
+            <h3 class="mt-3 font-semibold text-white">Replayability</h3>
+            <p class="mt-2 text-sm text-slate-400">Multiple stages, modes and increasing difficulty.</p>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section id="leaderboard" class="py-16 sm:py-20">
+      <div class="mx-auto max-w-6xl px-4">
+        <h2 class="font-display text-3xl font-bold text-white sm:text-4xl">SEE HOW YOU STACK UP</h2>
+        <p class="mt-3 max-w-2xl text-slate-400">Compete for high scores and track your performance across supported games. Rankings appear here only after real plays are recorded.</p>
+        <div id="board-wrap" class="mt-8 overflow-hidden rounded-2xl border border-white/10">
+          <div id="board-empty" class="p-8 text-center text-sm text-slate-400">No ranked scores yet. Play a game to appear on the board.</div>
+          <table id="board-table" hidden class="w-full text-left text-sm">
+            <thead class="bg-white/5 text-xs uppercase tracking-wider text-slate-400">
+              <tr>
+                <th class="px-4 py-3 font-medium">Rank</th>
+                <th class="px-4 py-3 font-medium">Player</th>
+                <th class="px-4 py-3 font-medium">Game</th>
+                <th class="px-4 py-3 font-medium">Score</th>
+              </tr>
+            </thead>
+            <tbody id="board-body" class="divide-y divide-white/5"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <section id="plans" class="border-t border-white/5 bg-[#080d1a] py-16 sm:py-20">
+      <div class="mx-auto max-w-6xl px-4">
+        <h2 class="font-display text-3xl font-bold text-white sm:text-4xl">PLAYER ACCESS</h2>
+        <p class="mt-3 max-w-2xl text-slate-400">Game Arena can support different player access levels. Plans below are informational — checkout is not enabled on this page.</p>
+        <div class="mt-8 grid gap-4 md:grid-cols-2">
+          <article class="rounded-2xl border border-white/10 p-6">
+            <p class="text-xs uppercase tracking-[0.2em] text-slate-400">Free</p>
+            <h3 class="mt-2 text-2xl font-semibold text-white">Access to available free games and features.</h3>
+            <p class="mt-3 text-sm text-slate-400">Create a profile, play the current arena titles, and build shared progression.</p>
+          </article>
+          <article class="rounded-2xl border border-violet-400/25 bg-violet-500/5 p-6">
+            <p class="text-xs uppercase tracking-[0.2em] text-violet-300">Pro</p>
+            <h3 class="mt-2 text-2xl font-semibold text-white">Additional premium game experiences and features.</h3>
+            <p class="mt-3 text-sm text-slate-400">Reserved for future premium content. No payment is processed from this landing page.</p>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section id="cta" class="relative overflow-hidden py-20">
+      <div class="orb left-1/4 top-0 h-56 w-56 bg-cyan-400/20"></div>
+      <div class="orb right-1/4 bottom-0 h-56 w-56 bg-violet-500/20"></div>
+      <div class="relative mx-auto max-w-3xl px-4 text-center">
+        <h2 class="font-display text-3xl font-bold text-white sm:text-5xl">READY TO ENTER THE ARENA?</h2>
+        <p class="mt-4 text-slate-300">Pick a game, test your skills and start building your progress.</p>
+        <button type="button" class="focus-ring mt-8 rounded-xl bg-gradient-to-r from-cyan-400 to-violet-500 px-8 py-3.5 text-sm font-semibold text-slate-950 shadow-[0_0_34px_rgba(34,211,238,.3)]" onclick="Arena.goArena()">ENTER GAME ARENA</button>
+      </div>
+    </section>
+  </main>
+
+  <footer class="border-t border-white/10 bg-[#060910] py-10">
+    <div class="mx-auto flex max-w-6xl flex-col gap-8 px-4 sm:flex-row sm:items-start sm:justify-between">
+      <div>
+        <p class="font-display text-sm font-bold tracking-wider text-white">GAME ARENA</p>
+        <p class="mt-2 max-w-xs text-sm text-slate-500">A platform of fast, skill-based games. Play. Compete. Level up.</p>
+      </div>
+      <nav class="grid grid-cols-2 gap-x-10 gap-y-2 text-sm text-slate-400" aria-label="Footer">
+        <a href="#home" class="focus-ring rounded hover:text-white">Home</a>
+        <a href="#games" class="focus-ring rounded hover:text-white">Games</a>
+        <a href="#how" class="focus-ring rounded hover:text-white">How It Works</a>
+        <a href="/login" class="focus-ring rounded hover:text-white">Login</a>
+        <a href="/signup" class="focus-ring rounded hover:text-white">Sign Up</a>
+        <a href="/terms.html" class="focus-ring rounded hover:text-white">Terms</a>
+        <a href="/privacy.html" class="focus-ring rounded hover:text-white">Privacy</a>
+      </nav>
+    </div>
+    <p class="mx-auto mt-8 max-w-6xl px-4 text-xs text-slate-600">© Game Arena</p>
+  </footer>
+
+  <script src="/js/arena.js"></script>
+  <script>
+    const menuBtn = document.getElementById("menu-btn");
+    const mobileNav = document.getElementById("mobile-nav");
+    menuBtn.addEventListener("click", () => {
+      const open = mobileNav.hasAttribute("hidden");
+      if (open) mobileNav.removeAttribute("hidden");
+      else mobileNav.setAttribute("hidden", "");
+      menuBtn.setAttribute("aria-expanded", String(open));
+      menuBtn.setAttribute("aria-label", open ? "Close menu" : "Open menu");
+    });
+    mobileNav.querySelectorAll("a").forEach((a) => {
+      a.addEventListener("click", () => {
+        mobileNav.setAttribute("hidden", "");
+        menuBtn.setAttribute("aria-expanded", "false");
+      });
+    });
+
+    Arena.applyNavAuth();
+
+    const names = {
+      riddle: "Riddle Game",
+      reflex: "Reflex Challenge",
+      memory: "Memory Challenge",
+      penalty: "Penalty Shootout",
+      rps: "Rock Paper Scissors",
+      wordclash: "Word Clash",
+      trivia: "Trivia Rush",
+    };
+
+    fetch("/api/leaderboard")
+      .then((r) => r.json())
+      .then((data) => {
+        const entries = data.entries || [];
+        if (!entries.length) return;
+        document.getElementById("board-empty").hidden = true;
+        const table = document.getElementById("board-table");
+        table.hidden = false;
+        const body = document.getElementById("board-body");
+        body.innerHTML = entries.map((row) => (
+          "<tr>" +
+          "<td class='px-4 py-3 text-cyan-300'>" + row.rank + "</td>" +
+          "<td class='px-4 py-3 text-white'>" + String(row.username).replace(/[<>&]/g, "") + "</td>" +
+          "<td class='px-4 py-3 text-slate-400'>" + (names[row.gameId] || row.gameId) + "</td>" +
+          "<td class='px-4 py-3 font-medium text-white'>" + row.score + "</td>" +
+          "</tr>"
+        )).join("");
+      })
+      .catch(() => {});
+  </script>
+</body>
+</html>

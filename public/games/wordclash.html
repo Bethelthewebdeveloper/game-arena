@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" /><meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Word Clash — Game Arena</title>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600&display=swap" rel="stylesheet" />
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="min-h-screen bg-[#0d1408] font-sans text-slate-200">
+  <main class="mx-auto max-w-xl px-4 py-10">
+    <p class="text-xs uppercase tracking-widest text-lime-300">Game Arena · Word Clash</p>
+    <h1 class="mt-2 text-2xl font-semibold text-white">Unscramble the word</h1>
+    <p class="mt-2 text-sm text-slate-400">Time: <span id="time">40</span>s · Score: <span id="score">0</span></p>
+    <p id="word" class="mt-8 font-mono text-4xl tracking-[0.3em] text-lime-200"></p>
+    <form id="form" class="mt-6 flex gap-2">
+      <input id="guess" class="flex-1 rounded-xl border border-white/10 bg-white/5 px-3 py-2 outline-none ring-lime-300 focus:ring-2" aria-label="Unscrambled word" />
+      <button class="rounded-xl bg-lime-400 px-4 py-2 font-semibold text-slate-950">Solve</button>
+    </form>
+    <p id="msg" class="mt-3 text-sm text-slate-400"></p>
+  </main>
+  <script src="/js/arena.js"></script>
+  <script src="/js/game-shell.js"></script>
+  <script>
+    GameShell.mountChrome("WORD CLASH");
+    GameShell.guard();
+    const WORDS = ["arena", "level", "streak", "puzzle", "reflex", "memory", "trophy", "player"];
+    function scramble(w) {
+      let a = w.split("");
+      do { a = a.sort(() => Math.random() - 0.5); } while (a.join("") === w);
+      return a.join("");
+    }
+    let i = 0, score = 0, done = false;
+    document.getElementById("word").textContent = scramble(WORDS[i]);
+    let t = 40;
+    const timer = setInterval(async () => {
+      t -= 1; document.getElementById("time").textContent = t;
+      if (t <= 0 && !done) {
+        done = true; clearInterval(timer);
+        document.getElementById("msg").textContent = "Time up. Score " + score;
+        await GameShell.submitRun("wordclash", score, Math.min(30, score), Math.min(8, score / 10));
+      }
+    }, 1000);
+    document.getElementById("form").onsubmit = (e) => {
+      e.preventDefault();
+      if (done) return;
+      const g = document.getElementById("guess").value.trim().toLowerCase();
+      if (g === WORDS[i]) {
+        score += 10; i = (i + 1) % WORDS.length;
+        document.getElementById("score").textContent = score;
+        document.getElementById("word").textContent = scramble(WORDS[i]);
+        document.getElementById("guess").value = "";
+        document.getElementById("msg").textContent = "Clean solve.";
+      } else document.getElementById("msg").textContent = "Not that word.";
+    };
+  </script>
+</body>
+</html>
