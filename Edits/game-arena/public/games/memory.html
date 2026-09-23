@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" /><meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Memory Challenge — Game Arena</title>
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700&family=Outfit:wght@400;600&display=swap" rel="stylesheet" />
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="min-h-screen bg-[#0a1218] font-sans text-slate-200">
+  <main class="mx-auto max-w-xl px-4 py-10">
+    <p class="text-xs uppercase tracking-widest text-sky-300">Game Arena · Memory Challenge</p>
+    <h1 class="mt-2 text-2xl font-semibold text-white">Match the cards</h1>
+    <p class="mt-2 text-sm text-slate-400">Moves: <span id="moves">0</span></p>
+    <div id="grid" class="mt-6 grid grid-cols-4 gap-2"></div>
+  </main>
+  <script src="/js/arena.js"></script>
+  <script src="/js/game-shell.js"></script>
+  <script>
+    GameShell.mountChrome("MEMORY CHALLENGE");
+    GameShell.guard();
+    const icons = ["🌙","⭐","🔥","💎","🍀","🎯","🎲","🧩"];
+    const deck = [...icons, ...icons].sort(() => Math.random() - 0.5);
+    let first = null, lock = false, moves = 0, matched = 0;
+    const grid = document.getElementById("grid");
+    deck.forEach((icon, idx) => {
+      const btn = document.createElement("button");
+      btn.className = "h-16 rounded-xl border border-sky-400/20 bg-[#10202c] text-2xl";
+      btn.dataset.icon = icon;
+      btn.textContent = "";
+      btn.setAttribute("aria-label", "Hidden card");
+      btn.onclick = () => flip(btn);
+      grid.appendChild(btn);
+    });
+    function flip(btn) {
+      if (lock || btn.dataset.done || btn === first) return;
+      btn.textContent = btn.dataset.icon;
+      if (!first) { first = btn; return; }
+      moves += 1;
+      document.getElementById("moves").textContent = moves;
+      if (first.dataset.icon === btn.dataset.icon) {
+        first.dataset.done = btn.dataset.done = "1";
+        first = null;
+        matched += 1;
+        if (matched === icons.length) {
+          const score = Math.max(10, 80 - moves);
+          GameShell.submitRun("memory", score, 25, 6);
+        }
+      } else {
+        lock = true;
+        const a = first, b = btn;
+        first = null;
+        setTimeout(() => { a.textContent = ""; b.textContent = ""; lock = false; }, 700);
+      }
+    }
+  </script>
+</body>
+</html>

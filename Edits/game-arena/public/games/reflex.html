@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" /><meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Reflex Challenge — Game Arena</title>
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700&family=Outfit:wght@400;600&display=swap" rel="stylesheet" />
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="min-h-screen bg-[#140b10] font-sans text-slate-200">
+  <main class="mx-auto max-w-xl px-4 py-10">
+    <p class="text-xs uppercase tracking-widest text-rose-300">Game Arena · Reflex Challenge</p>
+    <h1 class="mt-2 text-2xl font-semibold text-white">Hit the target</h1>
+    <p class="mt-2 text-sm text-slate-400">Score: <span id="score">0</span> · Time: <span id="time">20</span>s</p>
+    <div id="field" class="relative mt-6 h-72 overflow-hidden rounded-2xl border border-rose-400/20 bg-black/30"></div>
+    <button id="start" class="mt-4 rounded-xl bg-rose-400 px-4 py-2 font-semibold text-slate-950">Start</button>
+  </main>
+  <script src="/js/arena.js"></script>
+  <script src="/js/game-shell.js"></script>
+  <script>
+    GameShell.mountChrome("REFLEX CHALLENGE");
+    GameShell.guard();
+    let score = 0, playing = false, timer = null;
+    const field = document.getElementById("field");
+    window.__gaCleanup = () => { playing = false; if (timer) clearInterval(timer); };
+    document.getElementById("start").onclick = () => {
+      if (playing) return;
+      playing = true; score = 0;
+      document.getElementById("score").textContent = "0";
+      let t = 20;
+      timer = setInterval(() => {
+        t -= 1; document.getElementById("time").textContent = t;
+        if (t <= 0) {
+          clearInterval(timer); playing = false; field.innerHTML = "";
+          GameShell.submitRun("reflex", score, Math.min(40, score * 2), Math.min(8, score));
+        }
+      }, 1000);
+      spawn();
+    };
+    function spawn() {
+      if (!playing) return;
+      field.innerHTML = "";
+      const t = document.createElement("button");
+      t.className = "absolute h-12 w-12 rounded-full bg-rose-400 shadow-[0_0_20px_rgba(251,113,133,.5)]";
+      t.style.left = Math.random() * 80 + "%";
+      t.style.top = Math.random() * 75 + "%";
+      t.setAttribute("aria-label", "Target");
+      t.onclick = () => { score += 1; document.getElementById("score").textContent = score; spawn(); };
+      field.appendChild(t);
+      setTimeout(() => { if (playing && t.parentNode) spawn(); }, 900);
+    }
+  </script>
+</body>
+</html>

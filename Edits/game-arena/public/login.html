@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Login — Game Arena</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700&family=Outfit:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>tailwind.config={theme:{extend:{fontFamily:{display:['Orbitron','sans-serif'],sans:['Outfit','system-ui','sans-serif']}}}}</script>
+</head>
+<body class="min-h-screen bg-[#070b16] font-sans text-slate-200 antialiased">
+  <div class="mx-auto flex min-h-screen max-w-md flex-col justify-center px-4 py-10">
+    <a href="/" class="mb-8 inline-flex items-center gap-2 self-start">
+      <span class="grid h-9 w-9 place-items-center rounded-xl bg-gradient-to-br from-cyan-400 to-violet-500 text-slate-950">▲</span>
+      <span class="font-display text-sm font-bold tracking-wider text-white">GAME ARENA</span>
+    </a>
+    <h1 class="text-3xl font-semibold text-white">Welcome back</h1>
+    <p class="mt-2 text-sm text-slate-400">Log in with your existing Game Arena account.</p>
+    <form id="form" class="mt-8 space-y-4" novalidate>
+      <label class="block text-sm">
+        <span class="text-slate-300">Username</span>
+        <input name="username" autocomplete="username" required class="mt-1 w-full rounded-xl border border-white/10 bg-white/5 px-3 py-2.5 outline-none ring-cyan-400 focus:ring-2" />
+      </label>
+      <label class="block text-sm">
+        <span class="text-slate-300">Password</span>
+        <input name="password" type="password" autocomplete="current-password" required class="mt-1 w-full rounded-xl border border-white/10 bg-white/5 px-3 py-2.5 outline-none ring-cyan-400 focus:ring-2" />
+      </label>
+      <p id="error" class="hidden text-sm text-rose-300" role="alert"></p>
+      <button class="w-full rounded-xl bg-gradient-to-r from-cyan-400 to-violet-500 py-2.5 text-sm font-semibold text-slate-950">Log in</button>
+    </form>
+    <p class="mt-6 text-sm text-slate-400">Need an account? <a class="text-cyan-300 hover:underline" id="signup-link" href="/signup">Sign up</a></p>
+  </div>
+  <script src="/js/arena.js"></script>
+  <script>
+    const next = Arena.nextFromQuery();
+    document.getElementById("signup-link").href = "/signup?next=" + encodeURIComponent(next);
+    Arena.getMe().then((u) => { if (u) location.replace(next); });
+    document.getElementById("form").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const fd = new FormData(e.target);
+      const err = document.getElementById("error");
+      err.classList.add("hidden");
+      const res = await fetch("/api/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ username: fd.get("username"), password: fd.get("password") }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        err.textContent = data.error || "Could not log in.";
+        err.classList.remove("hidden");
+        return;
+      }
+      location.href = next;
+    });
+  </script>
+</body>
+</html>

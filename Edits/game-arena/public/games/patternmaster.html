@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Pattern Master — Game Arena</title>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600&display=swap" rel="stylesheet" />
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="min-h-screen bg-[#071414] font-sans text-slate-200">
+  <main class="mx-auto max-w-xl px-4 py-8">
+    <p class="text-xs uppercase tracking-widest text-teal-300">Game Arena · Pattern Master</p>
+    <h1 class="mt-2 text-2xl font-semibold text-white">Pattern Master</h1>
+    <section id="lobby" class="mt-6 space-y-3">
+      <select id="mode" class="w-full rounded-xl border border-white/10 bg-black/30 px-3 py-2">
+        <option value="classic">Classic Pattern</option>
+        <option value="speed">Speed Pattern</option>
+        <option value="grid">Memory Grid</option>
+        <option value="rush">Pattern Rush</option>
+        <option value="endless">Endless</option>
+        <option value="daily">Daily Pattern</option>
+      </select>
+      <input id="stage" type="number" min="1" max="50" value="1" class="w-full rounded-xl border border-white/10 bg-black/30 px-3 py-2" />
+      <button id="start" class="w-full rounded-xl bg-teal-400 py-3 font-semibold text-slate-950">Play</button>
+    </section>
+    <section id="play" hidden>
+      <p id="status" class="mb-3 text-sm text-slate-400">Watch the pattern.</p>
+      <div id="grid" class="grid gap-2"></div>
+      <button id="submit" hidden class="mt-4 w-full rounded-xl bg-teal-400 py-2.5 font-semibold text-slate-950">Submit pattern</button>
+    </section>
+    <section id="result" hidden class="mt-6 rounded-2xl border border-teal-400/20 p-5">
+      <h2 class="text-xl font-semibold text-white">PATTERN MASTER COMPLETE</h2>
+      <p id="body" class="mt-3 text-sm leading-7"></p>
+      <div class="mt-4 flex flex-wrap gap-2">
+        <button id="retry" class="rounded-xl bg-teal-400 px-4 py-2 font-semibold text-slate-950">Retry</button>
+        <button id="next" class="rounded-xl border border-white/15 px-4 py-2">Next Stage</button>
+        <a href="/dashboard" class="rounded-xl border border-white/15 px-4 py-2">Back to Game Arena</a>
+      </div>
+    </section>
+  </main>
+  <script src="/js/arena.js"></script>
+  <script src="/js/game-shell.js"></script>
+  <script>
+    GameShell.mountChrome("PATTERN MASTER");
+    let best = null, timerId = null;
+    window.__gaCleanup = () => { clearTimeout(timerId); timerId = null; };
+    GameShell.guard().then((u) => {
+      if (!u) return;
+      const st = (u.stats && u.stats.patternmaster) || {};
+      document.getElementById("stage").value = st.stage || 1;
+      best = st.best;
+    });
+    document.getElementById("start").onclick = start;
+    document.getElementById("retry").onclick = start;
+    document.getElementById("next").onclick = () => { document.getElementById("stage").value = Math.min(50, Number(document.getElementById("stage").value)+1); start(); };
+
+    function seedDaily() {
+      const d = new Date().toISOString().slice(0,10);
+      let h = 0; for (const c of d) h = (h * 33 + c.charCodeAt(0)) >>> 0;
+      return h;
+    }
+
+    function start() {
+      clearTimeout(timerId);
+      const stage = Math.max(1, Math.min(50, Number(document.getElementById("stage").value)||1));
+      const mode = document.getElementById("mode").value;
+      const size = stage <= 10 ? 3 : stage <= 25 ? 4 : stage <= 40 ? 5 : 6;
+      let cells = stage <= 10 ? 3 : stage <= 20 ? 4 : stage <= 35 ? 6 : 8;
+      if (mode === "grid") cells += 1;
+      if (mode === "rush") cells = Math.max(3, cells - 1);
+      const showMs = mode === "speed" ? Math.max(450, 1100 - stage * 12) : Math.max(600, 1600 - stage * 16);
+      const rounds = mode === "endless" ? 8 : mode === "rush" ? 5 : 4;
+      document.getElementById("lobby").hidden = true;
+      document.getElementById("result").hidden = true;
+      document.getElementById("play").hidden = false;
+      runRound({ stage, mode, size, cells, showMs, rounds, i: 0, score: 0, mistakes: 0, ok: 0, rng: mode === "daily" ? seedDaily() : Date.now() % 1e9 });
+    }
+
+    function rnd(S) { S.rng = (S.rng * 1664525 + 1013904223) >>> 0; return S.rng / 4294967296; }
+
+    function runRound(S) {
+      if (S.i >= S.rounds) return finish(S);
+      const total = S.size * S.size;
+      const pattern = new Set();
+      while (pattern.size < Math.min(S.cells, total - 1)) pattern.add(Math.floor(rnd(S) * total));
+      S.pattern = pattern;
+      S.picked = new Set();
+      const grid = document.getElementById("grid");
+      grid.style.gridTemplateColumns = "repeat(" + S.size + ", minmax(0,1fr))";
+      grid.innerHTML = "";
+      document.getElementById("submit").hidden = true;
+      document.getElementById("status").textContent = "Watch the pattern. Stage " + S.stage + " · Round " + (S.i+1);
+      for (let i = 0; i < total; i++) {
+        const b = document.createElement("button");
+        b.className = "aspect-square rounded-xl border border-teal-400/20 bg-white/5 text-lg";
+        b.dataset.i = i;
+        if (pattern.has(i)) b.classList.add("bg-teal-400", "text-slate-950");
+        grid.appendChild(b);
+      }
+      timerId = setTimeout(() => reveal(S), S.showMs);
+    }
+
+    function reveal(S) {
+      document.getElementById("status").textContent = "Rebuild the pattern.";
+      document.getElementById("submit").hidden = false;
+      document.querySelectorAll("#grid button").forEach((b) => {
+        b.className = "aspect-square rounded-xl border border-teal-400/20 bg-white/5";
+        b.onclick = () => {
+          const i = Number(b.dataset.i);
+          if (S.picked.has(i)) { S.picked.delete(i); b.classList.remove("bg-teal-300", "text-slate-950"); }
+          else { S.picked.add(i); b.classList.add("bg-teal-300", "text-slate-950"); }
+        };
+      });
+      document.getElementById("submit").onclick = () => {
+        let good = S.pattern.size === S.picked.size;
+        S.pattern.forEach((i) => { if (!S.picked.has(i)) good = false; });
+        document.querySelectorAll("#grid button").forEach((b) => {
+          const i = Number(b.dataset.i);
+          if (S.pattern.has(i)) b.classList.add("ring-2", "ring-teal-200");
+          if (S.picked.has(i) && !S.pattern.has(i)) b.classList.add("bg-rose-500");
+        });
+        if (good) { S.ok += 1; S.score += 90 + S.stage; document.getElementById("status").textContent = "Correct."; }
+        else { S.mistakes += 1; document.getElementById("status").textContent = "Not a match."; }
+        S.i += 1;
+        timerId = setTimeout(() => runRound(S), 700);
+      };
+    }
+
+    async function finish(S) {
+      const attempts = S.ok + S.mistakes;
+      const acc = attempts ? Math.round((S.ok / attempts) * 100) : 0;
+      const completed = S.ok >= Math.ceil(S.rounds * 0.6);
+      document.getElementById("play").hidden = true;
+      document.getElementById("result").hidden = false;
+      document.getElementById("body").innerHTML = "Pattern: Stage " + S.stage + "<br>Accuracy: " + acc + "%<br>Mistakes: " + S.mistakes + "<br>Score: " + S.score + "<br>Best Score: " + (best == null ? S.score : Math.max(best, S.score));
+      const out = await GameShell.submitRun("patternmaster", S.score, 0, 0, {
+        game: "pattern-master", stage: S.stage, mode: S.mode, completed, accuracy: acc, mistakes: S.mistakes
+      });
+      if (out.user && out.user.stats && out.user.stats.patternmaster) best = out.user.stats.patternmaster.best;
+    }
+  </script>
+</body>
+</html>

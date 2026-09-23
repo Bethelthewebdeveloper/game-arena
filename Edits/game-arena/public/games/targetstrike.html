@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Target Strike — Game Arena</title>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600&display=swap" rel="stylesheet" />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>#field{touch-action:manipulation}</style>
+</head>
+<body class="min-h-screen bg-[#140808] font-sans text-slate-200">
+  <main class="mx-auto max-w-xl px-4 py-8">
+    <p class="text-xs uppercase tracking-widest text-red-300">Game Arena · Target Strike</p>
+    <h1 class="mt-2 text-2xl font-semibold text-white">Target Strike</h1>
+    <section id="lobby" class="mt-6 space-y-3">
+      <select id="mode" class="w-full rounded-xl border border-white/10 bg-black/30 px-3 py-2">
+        <option value="quick">Quick Strike</option>
+        <option value="ten">10 Targets</option>
+        <option value="time-attack">Time Attack</option>
+        <option value="speed">Speed Strike</option>
+        <option value="accuracy">Accuracy Challenge</option>
+        <option value="endless">Endless</option>
+      </select>
+      <input id="stage" type="number" min="1" max="50" value="1" class="w-full rounded-xl border border-white/10 bg-black/30 px-3 py-2" />
+      <button id="start" class="w-full rounded-xl bg-red-400 py-3 font-semibold text-slate-950">Play</button>
+    </section>
+    <section id="play" hidden>
+      <p class="mb-2 text-sm">Hit <span id="hit">0</span> · Miss <span id="miss">0</span> · Score <span id="score">0</span> · <span id="clock"></span></p>
+      <div id="field" class="relative h-80 overflow-hidden rounded-2xl border border-red-400/20 bg-[#1a0b0b]"></div>
+    </section>
+    <section id="result" hidden class="mt-6 rounded-2xl border border-red-400/20 p-5">
+      <h2 class="text-xl font-semibold text-white">TARGET STRIKE COMPLETE</h2>
+      <p id="body" class="mt-3 text-sm leading-7"></p>
+      <div class="mt-4 flex flex-wrap gap-2">
+        <button id="retry" class="rounded-xl bg-red-400 px-4 py-2 font-semibold text-slate-950">Retry</button>
+        <button id="next" class="rounded-xl border border-white/15 px-4 py-2">Next Stage</button>
+        <a href="/dashboard" class="rounded-xl border border-white/15 px-4 py-2">Back to Game Arena</a>
+      </div>
+    </section>
+  </main>
+  <script src="/js/arena.js"></script>
+  <script src="/js/game-shell.js"></script>
+  <script>
+    GameShell.mountChrome("TARGET STRIKE");
+    let unlocked = 1, best = null, timerId = null, spawnId = null, reactions = [], submitted = false;
+    window.__gaCleanup = () => { clearInterval(timerId); clearTimeout(spawnId); timerId = spawnId = null; };
+    GameShell.guard().then((u) => {
+      if (!u) return;
+      const st = (u.stats && u.stats.targetstrike) || {};
+      unlocked = st.stage || 1;
+      best = st.best;
+      document.getElementById("stage").value = unlocked;
+    });
+    document.getElementById("start").onclick = start;
+    document.getElementById("retry").onclick = start;
+    document.getElementById("next").onclick = () => { document.getElementById("stage").value = Math.min(50, Number(document.getElementById("stage").value) + 1); start(); };
+
+    function clearTimers() { clearInterval(timerId); clearTimeout(spawnId); timerId = spawnId = null; }
+
+    function start() {
+      submitted = false;
+      clearTimers();
+      const stage = Math.max(1, Math.min(50, Number(document.getElementById("stage").value) || 1));
+      const mode = document.getElementById("mode").value;
+      const size = Math.max(28, 74 - stage);
+      const life = Math.max(380, 1400 - stage * 16);
+      const goal = mode === "ten" ? 10 : mode === "quick" ? 8 : mode === "endless" ? 999 : 12;
+      const seconds = mode === "time-attack" ? 20 : mode === "speed" ? 15 : mode === "endless" ? 40 : 25;
+      const moving = stage >= 11 || mode === "speed";
+      const decoys = stage >= 31;
+      const S = { stage, mode, size, life, goal, seconds, moving, decoys, hit: 0, miss: 0, score: 0, combo: 0, done: false, shown: 0 };
+      reactions = [];
+      document.getElementById("lobby").hidden = true;
+      document.getElementById("result").hidden = true;
+      document.getElementById("play").hidden = false;
+      const field = document.getElementById("field");
+      field.innerHTML = "";
+      field.onclick = (e) => {
+        if (e.target === field && !S.done) { S.miss += 1; S.combo = 0; paint(S); }
+      };
+      window._S = S;
+      paint(S);
+      let left = S.seconds;
+      document.getElementById("clock").textContent = left + "s";
+      timerId = setInterval(() => {
+        left -= 1;
+        document.getElementById("clock").textContent = left + "s";
+        if (left <= 0) end(S);
+      }, 1000);
+      spawn(S);
+    }
+
+    function paint(S) {
+      document.getElementById("hit").textContent = S.hit;
+      document.getElementById("miss").textContent = S.miss;
+      document.getElementById("score").textContent = S.score;
+    }
+
+    function spawn(S) {
+      if (S.done) return;
+      const field = document.getElementById("field");
+      field.querySelectorAll("[data-target]").forEach((n) => n.remove());
+      const count = S.stage >= 31 ? 2 : 1;
+      for (let i = 0; i < count; i++) {
+        const el = document.createElement("button");
+        const decoy = S.decoys && Math.random() < 0.22;
+        el.dataset.target = decoy ? "no" : "yes";
+        el.setAttribute("aria-label", decoy ? "Decoy" : "Target");
+        const sz = decoy ? S.size : S.size;
+        el.style.cssText = `position:absolute;width:${sz}px;height:${sz}px;border-radius:9999px;left:${Math.random()*78}%;top:${Math.random()*72}%;background:${decoy ? "#64748b" : "#f87171"};box-shadow:0 0 16px rgba(248,113,113,.45)`;
+        const born = performance.now();
+        if (S.moving) {
+          const vx = (Math.random() * 2 - 1) * (0.6 + S.stage * 0.03);
+          const vy = (Math.random() * 2 - 1) * (0.6 + S.stage * 0.03);
+          const move = () => {
+            if (!el.isConnected || S.done) return;
+            const r = el.getBoundingClientRect(), f = field.getBoundingClientRect();
+            let x = el.offsetLeft + vx * 8, y = el.offsetTop + vy * 8;
+            if (x < 0 || x > f.width - sz) x = Math.max(0, Math.min(f.width - sz, x));
+            if (y < 0 || y > f.height - sz) y = Math.max(0, Math.min(f.height - sz, y));
+            el.style.left = x + "px"; el.style.top = y + "px";
+            requestAnimationFrame(move);
+          };
+          requestAnimationFrame(move);
+        }
+        el.onclick = (ev) => {
+          ev.stopPropagation();
+          if (S.done) return;
+          if (el.dataset.target === "no") { S.miss += 1; S.combo = 0; }
+          else {
+            S.hit += 1; S.combo += 1;
+            S.score += 80 + S.combo * 8;
+            reactions.push(performance.now() - born);
+            if (S.hit >= S.goal && S.mode !== "endless") return end(S);
+          }
+          el.remove();
+          paint(S);
+        };
+        field.appendChild(el);
+        S.shown += 1;
+        setTimeout(() => {
+          if (el.isConnected && !S.done) { if (el.dataset.target === "yes") { S.miss += 1; S.combo = 0; paint(S); } el.remove(); }
+        }, S.life);
+      }
+      spawnId = setTimeout(() => spawn(S), Math.max(420, S.life - 80));
+    }
+
+    async function end(S) {
+      if (S.done) return;
+      S.done = true;
+      clearTimers();
+      document.getElementById("field").innerHTML = "";
+      const attempts = S.hit + S.miss;
+      const acc = attempts ? Math.round((S.hit / attempts) * 100) : 0;
+      const avg = reactions.length ? Math.round(reactions.reduce((a,b)=>a+b,0) / reactions.length) : 0;
+      const completed = S.hit >= Math.min(S.goal, 8) || (S.mode === "endless" && S.hit >= 8);
+      document.getElementById("play").hidden = true;
+      document.getElementById("result").hidden = false;
+      document.getElementById("body").innerHTML =
+        "Targets Hit: " + S.hit + "/" + S.shown + "<br>Accuracy: " + acc + "%<br>Average Reaction: " + avg + "ms<br>Score: " + S.score + "<br>Best Score: " + (best == null ? S.score : Math.max(best, S.score));
+      if (!submitted) {
+        submitted = true;
+        const out = await GameShell.submitRun("targetstrike", S.score, 0, 0, {
+          game: "target-strike", stage: S.stage, mode: S.mode, completed, accuracy: acc, reactionTime: avg, targetsHit: S.hit
+        });
+        if (out.user && out.user.stats && out.user.stats.targetstrike) best = out.user.stats.targetstrike.best;
+      }
+    }
+  </script>
+</body>
+</html>

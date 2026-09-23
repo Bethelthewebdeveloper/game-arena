@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" /><meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Trivia Rush — Game Arena</title>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600&display=swap" rel="stylesheet" />
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="min-h-screen bg-[#100b1a] font-sans text-slate-200">
+  <main class="mx-auto max-w-xl px-4 py-10">
+    <p class="text-xs uppercase tracking-widest text-violet-300">Game Arena · Trivia Rush</p>
+    <h1 class="mt-2 text-2xl font-semibold text-white">Answer quickly</h1>
+    <p class="mt-2 text-sm text-slate-400">Streak: <span id="streak">0</span> · Score: <span id="score">0</span></p>
+    <p id="q" class="mt-6 text-lg text-white"></p>
+    <div id="opts" class="mt-4 grid gap-2"></div>
+    <p id="msg" class="mt-4 text-sm text-slate-400"></p>
+  </main>
+  <script src="/js/arena.js"></script>
+  <script src="/js/game-shell.js"></script>
+  <script>
+    GameShell.mountChrome("TRIVIA RUSH");
+    GameShell.guard();
+    const QS = [
+      { q: "How many minutes are in a full hour?", opts: ["30", "60", "90", "45"], a: 1 },
+      { q: "Which planet is known as the Red Planet?", opts: ["Venus", "Mars", "Jupiter", "Mercury"], a: 1 },
+      { q: "What is 7 × 8?", opts: ["54", "56", "64", "48"], a: 1 },
+      { q: "Which ocean is the largest?", opts: ["Atlantic", "Indian", "Pacific", "Arctic"], a: 2 },
+      { q: "How many sides does a hexagon have?", opts: ["5", "6", "7", "8"], a: 1 },
+    ];
+    let i = 0, score = 0, streak = 0, done = false;
+    function render() {
+      if (i >= QS.length) {
+        done = true;
+        document.getElementById("q").textContent = "Round complete.";
+        document.getElementById("opts").innerHTML = "";
+        document.getElementById("msg").textContent = "Final score " + score;
+        GameShell.submitRun("trivia", score, Math.min(40, score / 2), Math.min(10, streak));
+        return;
+      }
+      const item = QS[i];
+      document.getElementById("q").textContent = item.q;
+      document.getElementById("opts").innerHTML = item.opts.map((o, idx) =>
+        `<button data-i="${idx}" class="rounded-xl border border-violet-400/20 bg-white/5 px-4 py-3 text-left">${o}</button>`
+      ).join("");
+      document.querySelectorAll("#opts button").forEach((b) => {
+        b.onclick = () => {
+          if (done) return;
+          if (Number(b.dataset.i) === item.a) {
+            streak += 1; score += 10 + streak;
+            document.getElementById("msg").textContent = "Correct.";
+          } else {
+            streak = 0;
+            document.getElementById("msg").textContent = "Missed.";
+          }
+          document.getElementById("streak").textContent = streak;
+          document.getElementById("score").textContent = score;
+          i += 1;
+          render();
+        };
+      });
+    }
+    render();
+  </script>
+</body>
+</html>

@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Code Breaker — Game Arena</title>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600&display=swap" rel="stylesheet" />
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="min-h-screen bg-[#0c0c16] font-sans text-slate-200">
+  <main class="mx-auto max-w-xl px-4 py-8">
+    <p class="text-xs uppercase tracking-widest text-indigo-300">Game Arena · Code Breaker</p>
+    <h1 class="mt-2 text-2xl font-semibold text-white">Code Breaker</h1>
+    <section id="lobby" class="mt-6 space-y-3">
+      <select id="mode" class="w-full rounded-xl border border-white/10 bg-black/30 px-3 py-2">
+        <option value="classic">Classic Code</option>
+        <option value="four">4-Digit Challenge</option>
+        <option value="five">5-Digit Challenge</option>
+        <option value="logic">Logic Code</option>
+        <option value="speed">Speed Break</option>
+        <option value="endless">Endless</option>
+      </select>
+      <input id="stage" type="number" min="1" max="50" value="1" class="w-full rounded-xl border border-white/10 bg-black/30 px-3 py-2" />
+      <button id="start" class="w-full rounded-xl bg-indigo-400 py-3 font-semibold text-slate-950">Play</button>
+    </section>
+    <section id="play" hidden>
+      <p class="text-sm text-slate-400">Stage <span id="st"></span> · Attempts left <span id="att"></span> · Time <span id="clock">—</span></p>
+      <p class="mt-4 text-lg text-white">Enter the <span id="len"></span>-digit code</p>
+      <div id="slots" class="mt-3 flex flex-wrap gap-2"></div>
+      <div id="pad" class="mt-4 grid grid-cols-5 gap-2"></div>
+      <div class="mt-3 flex gap-2">
+        <button id="guess" class="rounded-xl bg-indigo-400 px-4 py-2 font-semibold text-slate-950">Submit guess</button>
+        <button id="del" class="rounded-xl border border-white/15 px-4 py-2">Delete</button>
+      </div>
+      <p id="clue" class="mt-4 text-sm text-indigo-200"></p>
+      <ul id="log" class="mt-3 space-y-1 text-sm text-slate-400"></ul>
+    </section>
+    <section id="result" hidden class="mt-6 rounded-2xl border border-indigo-400/20 p-5">
+      <h2 id="rtitle" class="text-xl font-semibold text-white">CODE BROKEN!</h2>
+      <p id="body" class="mt-3 text-sm leading-7"></p>
+      <div class="mt-4 flex flex-wrap gap-2">
+        <button id="retry" class="rounded-xl bg-indigo-400 px-4 py-2 font-semibold text-slate-950">Retry</button>
+        <button id="next" class="rounded-xl border border-white/15 px-4 py-2">Next Stage</button>
+        <a href="/dashboard" class="rounded-xl border border-white/15 px-4 py-2">Back to Game Arena</a>
+      </div>
+    </section>
+  </main>
+  <script src="/js/arena.js"></script>
+  <script src="/js/game-shell.js"></script>
+  <script>
+    GameShell.mountChrome("CODE BREAKER");
+    let best = null, timerId = null, t0 = 0;
+    window.__gaCleanup = () => { if (timerId) { clearInterval(timerId); timerId = null; } };
+    GameShell.guard().then((u) => {
+      if (!u) return;
+      const st = (u.stats && u.stats.codebreaker) || {};
+      document.getElementById("stage").value = st.stage || 1;
+      best = st.best;
+    });
+    document.getElementById("start").onclick = start;
+    document.getElementById("retry").onclick = start;
+    document.getElementById("next").onclick = () => { document.getElementById("stage").value = Math.min(50, Number(document.getElementById("stage").value)+1); start(); };
+
+    function stopTimer() { if (timerId) { clearInterval(timerId); timerId = null; } }
+
+    function secretCode(len) {
+      let s = "";
+      while (s.length < len) {
+        const d = String(Math.floor(Math.random() * 10));
+        if (!s.includes(d)) s += d;
+      }
+      return s;
+    }
+
+    function grade(secret, guess) {
+      let exact = 0, near = 0;
+      const usedS = {}, usedG = {};
+      for (let i = 0; i < secret.length; i++) {
+        if (guess[i] === secret[i]) { exact += 1; usedS[i] = usedG[i] = true; }
+      }
+      for (let i = 0; i < guess.length; i++) {
+        if (usedG[i]) continue;
+        for (let j = 0; j < secret.length; j++) {
+          if (!usedS[j] && guess[i] === secret[j]) { near += 1; usedS[j] = true; break; }
+        }
+      }
+      return { exact, near };
+    }
+
+    function start() {
+      stopTimer();
+      const stage = Math.max(1, Math.min(50, Number(document.getElementById("stage").value)||1));
+      const mode = document.getElementById("mode").value;
+      let len = 3;
+      if (mode === "four" || stage >= 11) len = 4;
+      if (mode === "five" || stage >= 31) len = 5;
+      if (stage <= 10 && mode === "classic") len = 3;
+      let attempts = stage <= 10 ? 6 : stage <= 20 ? 5 : stage <= 40 ? 4 : 3;
+      if (mode === "logic") attempts = Math.max(3, attempts - 1);
+      if (mode === "endless") attempts = 8;
+      const timed = mode === "speed" || stage >= 36;
+      const limit = timed ? Math.max(20, 55 - stage) : 0;
+      const S = { stage, mode, len, attempts, left: attempts, secret: secretCode(len), guess: "", done: false, timed, limit };
+      document.getElementById("lobby").hidden = true;
+      document.getElementById("result").hidden = true;
+      document.getElementById("play").hidden = false;
+      document.getElementById("st").textContent = stage;
+      document.getElementById("len").textContent = len;
+      document.getElementById("att").textContent = S.left;
+      document.getElementById("log").innerHTML = "";
+      document.getElementById("clue").textContent = stage <= 10 ? "Clue: digits do not repeat. Exact and close counts are returned after each guess." : "Digits do not repeat. Use the feedback after every attempt.";
+      renderSlots(S);
+      const pad = document.getElementById("pad");
+      pad.innerHTML = "";
+      for (let n = 0; n <= 9; n++) {
+        const b = document.createElement("button");
+        b.className = "rounded-xl border border-indigo-400/20 py-3";
+        b.textContent = n;
+        b.onclick = () => { if (S.guess.length < S.len) { S.guess += String(n); renderSlots(S); } };
+        pad.appendChild(b);
+      }
+      document.getElementById("del").onclick = () => { S.guess = S.guess.slice(0, -1); renderSlots(S); };
+      document.getElementById("guess").onclick = () => submitGuess(S);
+      t0 = performance.now();
+      if (timed) {
+        let left = limit;
+        document.getElementById("clock").textContent = left + "s";
+        timerId = setInterval(() => {
+          left -= 1;
+          document.getElementById("clock").textContent = left + "s";
+          if (left <= 0) finish(S, false);
+        }, 1000);
+      } else document.getElementById("clock").textContent = "—";
+      window._code = S;
+    }
+
+    function renderSlots(S) {
+      const box = document.getElementById("slots");
+      box.innerHTML = "";
+      for (let i = 0; i < S.len; i++) {
+        const d = document.createElement("div");
+        d.className = "grid h-12 w-12 place-items-center rounded-xl border border-indigo-400/30 bg-white/5 text-xl";
+        d.textContent = S.guess[i] || "_";
+        box.appendChild(d);
+      }
+    }
+
+    function submitGuess(S) {
+      if (S.done || S.guess.length !== S.len) return;
+      const g = S.guess;
+      const res = grade(S.secret, g);
+      S.left -= 1;
+      document.getElementById("att").textContent = S.left;
+      const li = document.createElement("li");
+      li.textContent = g.split("").join(" ") + " — " + res.exact + " exact, " + res.near + " wrong place";
+      document.getElementById("log").prepend(li);
+      document.getElementById("clue").textContent = res.exact + " digit(s) correct and in the correct position. " + res.near + " correct digit(s) in the wrong position.";
+      S.guess = "";
+      renderSlots(S);
+      if (res.exact === S.len) return finish(S, true);
+      if (S.left <= 0) finish(S, false);
+    }
+
+    async function finish(S, ok) {
+      if (S.done) return;
+      S.done = true;
+      stopTimer();
+      const time = (performance.now() - t0) / 1000;
+      const used = S.attempts - S.left;
+      const score = ok ? Math.max(120, 900 - used * 80 - Math.floor(time) * 4 + S.stage * 6) : Math.max(0, 40 * used);
+      document.getElementById("play").hidden = true;
+      document.getElementById("result").hidden = false;
+      document.getElementById("rtitle").textContent = ok ? "CODE BROKEN!" : "CODE HOLDS";
+      document.getElementById("body").innerHTML = "Stage: " + S.stage + "<br>Attempts: " + used + "<br>Time: " + time.toFixed(1) + "s<br>Score: " + score + "<br>Best Score: " + (best == null ? score : Math.max(best, score)) + (ok ? "" : "<br>The code was " + S.secret);
+      const out = await GameShell.submitRun("codebreaker", score, 0, 0, {
+        game: "code-breaker", stage: S.stage, mode: S.mode, completed: ok, attempts: used, time
+      });
+      if (out.user && out.user.stats && out.user.stats.codebreaker) best = out.user.stats.codebreaker.best;
+    }
+  </script>
+</body>
+</html>

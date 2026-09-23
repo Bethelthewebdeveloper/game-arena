@@ -1,0 +1,10 @@
+{
+  "name": "game-arena",
+  "version": "1.0.0",
+  "description": "Game Arena — play, compete, and level up across skill-based mini games.",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "engines": { "node": ">=18" }
+}
