@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Number Rush — Game Arena</title>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600&display=swap" rel="stylesheet" />
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="min-h-screen bg-[#080e18] font-sans text-slate-200">
+  <main class="mx-auto max-w-xl px-4 py-8">
+    <p class="text-xs uppercase tracking-widest text-blue-300">Game Arena · Number Rush</p>
+    <h1 class="mt-2 text-2xl font-semibold text-white">Number Rush</h1>
+    <section id="lobby" class="mt-6 space-y-3">
+      <select id="mode" class="w-full rounded-xl border border-white/10 bg-black/30 px-3 py-2">
+        <option value="quick">Quick Math</option>
+        <option value="ten">10 Questions</option>
+        <option value="time-rush">Time Rush</option>
+        <option value="sequence">Number Sequence</option>
+        <option value="speed">Speed Math</option>
+        <option value="endless">Endless</option>
+      </select>
+      <input id="stage" type="number" min="1" max="50" value="1" class="w-full rounded-xl border border-white/10 bg-black/30 px-3 py-2" />
+      <button id="start" class="w-full rounded-xl bg-blue-400 py-3 font-semibold text-slate-950">Play</button>
+    </section>
+    <section id="play" hidden>
+      <p class="text-sm text-slate-400">Time <span id="clock">0</span>s · Score <span id="score">0</span> · Combo <span id="combo">0</span></p>
+      <p id="q" class="mt-6 text-2xl font-semibold text-white"></p>
+      <div id="opts" class="mt-5 grid gap-2"></div>
+    </section>
+    <section id="result" hidden class="mt-6 rounded-2xl border border-blue-400/20 p-5">
+      <h2 class="text-xl font-semibold text-white">NUMBER RUSH COMPLETE</h2>
+      <p id="body" class="mt-3 text-sm leading-7"></p>
+      <div class="mt-4 flex flex-wrap gap-2">
+        <button id="retry" class="rounded-xl bg-blue-400 px-4 py-2 font-semibold text-slate-950">Retry</button>
+        <button id="next" class="rounded-xl border border-white/15 px-4 py-2">Next Stage</button>
+        <a href="/dashboard" class="rounded-xl border border-white/15 px-4 py-2">Back to Game Arena</a>
+      </div>
+    </section>
+  </main>
+  <script src="/js/arena.js"></script>
+  <script src="/js/game-shell.js"></script>
+  <script>
+    GameShell.mountChrome("NUMBER RUSH");
+    let best = null, timerId = null;
+    window.__gaCleanup = () => { if (timerId) { clearInterval(timerId); timerId = null; } };
+    GameShell.guard().then((u) => {
+      if (!u) return;
+      const st = (u.stats && u.stats.numberrush) || {};
+      document.getElementById("stage").value = st.stage || 1;
+      best = st.best;
+    });
+    document.getElementById("start").onclick = start;
+    document.getElementById("retry").onclick = start;
+    document.getElementById("next").onclick = () => { document.getElementById("stage").value = Math.min(50, Number(document.getElementById("stage").value)+1); start(); };
+
+    function stopTimer() { if (timerId) { clearInterval(timerId); timerId = null; } }
+
+    function makeQ(stage, mode) {
+      const r = (a,b) => a + Math.floor(Math.random() * (b - a + 1));
+      let kind = "add";
+      if (mode === "sequence" || (stage >= 21 && stage <= 30)) kind = "seq";
+      else if (stage <= 10) kind = Math.random() < 0.5 ? "add" : "cmp";
+      else if (stage <= 20) kind = ["add","sub","cmp"][r(0,2)];
+      else if (stage <= 40) kind = ["mul","div","seq"][r(0,2)];
+      else kind = ["add","sub","mul","div","seq","cmp"][r(0,5)];
+      if (mode === "quick" || mode === "speed") kind = ["add","sub","mul"][r(0,2)];
+      if (kind === "add") {
+        const a = r(1, 9 + stage), b = r(1, 9 + stage), ans = a + b;
+        return pack(a + " + " + b + " = ?", ans, [ans, ans+1, ans-2, ans+3]);
+      }
+      if (kind === "sub") {
+        const a = r(8, 20 + stage), b = r(1, a-1), ans = a - b;
+        return pack(a + " − " + b + " = ?", ans, [ans, ans+2, Math.abs(ans-1), ans+4]);
+      }
+      if (kind === "mul") {
+        const a = r(2, 4 + Math.floor(stage/8)), b = r(2, 9), ans = a * b;
+        return pack(a + " × " + b + " = ?", ans, [ans, ans+a, ans-b, a+b]);
+      }
+      if (kind === "div") {
+        const b = r(2, 9), ans = r(2, 9), a = b * ans;
+        return pack(a + " ÷ " + b + " = ?", ans, [ans, ans+1, ans-1, b]);
+      }
+      if (kind === "cmp") {
+        const a = r(10, 90), b = r(10, 90);
+        const larger = Math.max(a,b);
+        return pack("Which number is larger?", larger, [a, b, Math.min(a,b)-3, Math.max(a,b)+5].filter((v,i,arr)=>arr.indexOf(v)===i));
+      }
+      const start = r(1, 6), step = r(2, 4 + Math.floor(stage/15));
+      const seq = [start, start+step, start+2*step, start+3*step];
+      const ans = start + 4*step;
+      return pack(seq.join(", ") + ", ?", ans, [ans, ans+step, ans-step, start]);
+    }
+    function pack(q, ans, opts) {
+      const uniq = [];
+      opts.forEach((n) => { if (!uniq.includes(n)) uniq.push(n); });
+      while (uniq.length < 4) uniq.push(ans + uniq.length + 1);
+      uniq.sort(() => Math.random() - 0.5);
+      return { q, ans, opts: uniq.slice(0,4) };
+    }
+
+    function start() {
+      stopTimer();
+      const stage = Math.max(1, Math.min(50, Number(document.getElementById("stage").value)||1));
+      const mode = document.getElementById("mode").value;
+      const total = mode === "ten" ? 10 : mode === "quick" ? 6 : mode === "endless" ? 20 : 8;
+      const limit = mode === "speed" ? Math.max(5, 10 - Math.floor(stage/10)) : mode === "time-rush" ? Math.max(6, 12 - Math.floor(stage/12)) : Math.max(7, 14 - Math.floor(stage/10));
+      const S = { stage, mode, total, i: 0, score: 0, combo: 0, correct: 0, wrong: 0, timeout: 0, done: false, limit };
+      document.getElementById("lobby").hidden = true;
+      document.getElementById("result").hidden = true;
+      document.getElementById("play").hidden = false;
+      next(S);
+    }
+
+    function next(S) {
+      stopTimer();
+      if (S.done) return;
+      if (S.i >= S.total) return finish(S);
+      const item = makeQ(S.stage, S.mode);
+      S.item = item;
+      document.getElementById("q").textContent = item.q;
+      document.getElementById("score").textContent = S.score;
+      document.getElementById("combo").textContent = S.combo;
+      const box = document.getElementById("opts");
+      box.innerHTML = item.opts.map((n) => `<button data-n="${n}" class="rounded-xl border border-blue-400/20 bg-white/5 px-4 py-3 text-left text-lg">${n}</button>`).join("");
+      box.querySelectorAll("button").forEach((b) => b.onclick = () => answer(S, Number(b.dataset.n)));
+      let left = S.limit;
+      document.getElementById("clock").textContent = left;
+      timerId = setInterval(() => {
+        left -= 1;
+        document.getElementById("clock").textContent = left;
+        if (left <= 0) {
+          stopTimer();
+          S.timeout += 1; S.combo = 0; S.i += 1;
+          next(S);
+        }
+      }, 1000);
+    }
+
+    function answer(S, n) {
+      if (S.done) return;
+      stopTimer();
+      if (n === S.item.ans) { S.correct += 1; S.combo += 1; S.score += 70 + S.combo * 10; }
+      else { S.wrong += 1; S.combo = 0; }
+      S.i += 1;
+      next(S);
+    }
+
+    async function finish(S) {
+      S.done = true;
+      stopTimer();
+      const asked = S.correct + S.wrong + S.timeout;
+      const acc = asked ? Math.round((S.correct / asked) * 100) : 0;
+      const completed = S.correct >= Math.ceil(S.total * 0.5);
+      document.getElementById("play").hidden = true;
+      document.getElementById("result").hidden = false;
+      document.getElementById("body").innerHTML = "Correct: " + S.correct + "<br>Wrong: " + S.wrong + "<br>Unanswered: " + S.timeout + "<br>Accuracy: " + acc + "%<br>Score: " + S.score + "<br>Best Score: " + (best == null ? S.score : Math.max(best, S.score));
+      const out = await GameShell.submitRun("numberrush", S.score, 0, 0, {
+        game: "number-rush", stage: S.stage, mode: S.mode, completed, accuracy: acc, correctAnswers: S.correct
+      });
+      if (out.user && out.user.stats && out.user.stats.numberrush) best = out.user.stats.numberrush.best;
+    }
+  </script>
+</body>
+</html>

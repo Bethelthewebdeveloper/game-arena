@@ -1,0 +1,50 @@
+[
+  {
+    "id": "s_mucta3eg",
+    "userId": "u_mucta2ya7862ef",
+    "username": "phase5ok",
+    "gameId": "minirace",
+    "score": 850,
+    "stage": 8,
+    "mode": "time-trial",
+    "time": 18.42,
+    "completed": true,
+    "createdAt": "2026-09-22T15:10:54.136Z"
+  },
+  {
+    "id": "s_mucta7at",
+    "userId": "u_mucta2ya7862ef",
+    "username": "phase5ok",
+    "gameId": "minirace",
+    "score": 2000,
+    "stage": 1,
+    "mode": null,
+    "time": null,
+    "completed": true,
+    "createdAt": "2026-09-22T15:10:59.189Z"
+  },
+  {
+    "id": "s_mucta846",
+    "userId": "u_mucta2ya7862ef",
+    "username": "phase5ok",
+    "gameId": "riddle",
+    "score": 30,
+    "stage": null,
+    "mode": null,
+    "time": null,
+    "completed": false,
+    "createdAt": "2026-09-22T15:11:00.246Z"
+  },
+  {
+    "id": "s_mue5elc7",
+    "userId": "u_mue5ekps08e77c",
+    "username": "auditfix",
+    "gameId": "numberrush",
+    "score": 400,
+    "stage": 2,
+    "mode": null,
+    "time": null,
+    "completed": true,
+    "createdAt": "2026-09-23T13:38:05.575Z"
+  }
+]

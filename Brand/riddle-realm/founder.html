@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Founder Access — Riddle Realm</title>
+  <meta name="robots" content="noindex, nofollow, noarchive" />
+  <link rel="stylesheet" href="style.css" />
+  <style>
+    .f-wrap { max-width: 780px; margin: 32px auto; padding: 16px; }
+    .f-wrap h1 { font-family: var(--font-display); margin-bottom: 6px; }
+    .f-card { padding: 20px; margin-bottom: 14px; }
+    .f-card label { display: block; font-size: 0.85rem; font-weight: 600; margin: 10px 0 4px; color: var(--text-secondary); }
+    .f-card input { width: 100%; padding: 12px 14px; border-radius: 10px; border: 1px solid var(--border-glass); background: var(--bg-glass); color: var(--text-primary); font-size: 1rem; }
+    .f-msg { min-height: 1.4em; font-size: 0.85rem; color: var(--text-muted); margin: 10px 0; }
+    .f-msg.err { color: #f87171; }
+    .f-msg.ok { color: #34d399; }
+    .kpi-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    @media (min-width: 640px) { .kpi-grid { grid-template-columns: 1fr 1fr 1fr; } }
+    .kpi { padding: 12px; text-align: center; }
+    .kpi-label { display: block; font-size: 0.72rem; color: var(--text-muted); }
+    .kpi-value { font-family: var(--font-display); font-weight: 800; font-size: 1.15rem; }
+    .f-section h2 { font-size: 1rem; margin: 0 0 10px; }
+    .f-note { font-size: 0.78rem; color: var(--text-muted); line-height: 1.45; }
+    .f-empty { font-size: 0.9rem; color: var(--text-muted); padding: 8px 0; }
+    .f-row { display: flex; justify-content: space-between; gap: 12px; padding: 8px 0; border-bottom: 1px solid var(--border-glass); font-size: 0.88rem; }
+    .f-row:last-child { border-bottom: none; }
+    .f-row span:last-child { font-weight: 700; }
+    .f-help { margin-top: 16px; padding: 14px; border-radius: 12px; background: var(--bg-glass); border: 1px solid var(--border-glass); font-size: 0.8rem; color: var(--text-secondary); line-height: 1.5; }
+    .f-help code { font-size: 0.78rem; color: #a78bfa; }
+  </style>
+</head>
+<body>
+  <div class="f-wrap">
+    <h1>Owner Dashboard</h1>
+    <p class="f-note">Private owner / admin area. Transferable to a future buyer. Discovering this page does not grant access.</p>
+
+    <div id="panel-login" class="f-card glass">
+      <h2>Private Founder Area</h2>
+      <p class="f-note">Enter the Founder Access Key configured on the server as <code>FOUNDER_ACCESS_KEY</code>. The real secret is never stored in this page.</p>
+      <label for="access-key">Founder Access Key</label>
+      <input id="access-key" type="password" autocomplete="current-password" placeholder="Enter Access Key" />
+      <p class="f-msg" id="login-msg"></p>
+      <button type="button" class="btn-primary" id="btn-continue" style="width:100%">Continue</button>
+      <div class="f-help">
+        <strong>How to set the key</strong><br />
+        1. Create a strong random secret (password manager / secret generator).<br />
+        2. Put it only in server env — never in HTML, JS, or GitHub.<br />
+        Local: create <code>.env</code> with <code>FOUNDER_ACCESS_KEY=your_secret</code> then <code>npm start</code>.<br />
+        Deployed: set the same name in your host environment variables (e.g. Vercel → Project → Settings → Environment Variables).<br />
+        Open this page via the <strong>running server</strong> (same origin), not <code>file://</code>.
+      </div>
+    </div>
+
+    <div id="panel-dash" hidden>
+      <div class="f-card glass" style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap">
+        <div>
+          <strong>Welcome, Founder</strong>
+          <div class="f-note" id="dash-meta">Session active</div>
+        </div>
+        <button type="button" class="btn-secondary" id="btn-logout">Logout</button>
+      </div>
+      <div class="f-card glass"><h2>Overview <span id="live-dot" class="f-note">● polling</span></h2><div class="kpi-grid" id="kpi-box"></div></div>
+      <div class="f-card glass f-section"><h2>Live activity</h2><div id="live-box" class="f-empty">Loading…</div></div>
+      <div class="f-card glass f-section"><h2>Battles</h2><div id="battle-box" class="f-empty">Loading…</div></div>
+      <div class="f-card glass f-section"><h2>Challenges</h2><div id="challenge-box" class="f-empty">Loading…</div></div>
+      <div class="f-card glass f-section"><h2>Daily Riddle</h2><div id="daily-box" class="f-empty">Loading…</div></div>
+      <div class="f-card glass f-section"><h2>Multiplayer</h2><div id="mp-box" class="f-empty">Loading…</div></div>
+      <div class="f-card glass f-section"><h2>AI</h2><div id="ai-box" class="f-empty">Loading…</div></div>
+      <div class="f-card glass f-section"><h2>Social Sharing</h2><p class="f-note">Counts are share initiations only.</p><div id="share-box" class="f-empty">Loading…</div></div>
+    </div>
+  </div>
+  <script>
+  (function () {
+    'use strict';
+    var TOKEN_KEY = 'rr_founder_access_token';
+    function $(id) { return document.getElementById(id); }
+    function token() { try { return sessionStorage.getItem(TOKEN_KEY); } catch (e) { return null; } }
+    function setToken(t) { try { if (t) sessionStorage.setItem(TOKEN_KEY, t); else sessionStorage.removeItem(TOKEN_KEY); } catch (e) {} }
+    function esc(s) {
+      return String(s == null ? '' : s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    }
+    function row(label, value) {
+      var v = value == null || value === '' ? '—' : value;
+      return '<div class="f-row"><span>' + esc(label) + '</span><span>' + esc(v) + '</span></div>';
+    }
+    function empty(el, msg) { el.className = 'f-empty'; el.textContent = msg || 'No data available yet.'; }
+
+    async function api(path, opts) {
+      opts = opts || {};
+      var headers = Object.assign({ 'Content-Type': 'application/json', Accept: 'application/json' }, opts.headers || {});
+      if (token()) headers.Authorization = 'Bearer ' + token();
+      try {
+        var res = await fetch(path, {
+          method: opts.method || 'GET',
+          headers: headers,
+          body: opts.body ? JSON.stringify(opts.body) : undefined
+        });
+        var data = {};
+        try { data = await res.json(); } catch (e) {}
+        return { ok: res.ok && data && data.success !== false, status: res.status, data: data };
+      } catch (e) {
+        return { ok: false, status: 0, data: { error: 'Network error — open this page from the running game server, not as a local file.' } };
+      }
+    }
+
+    function showLogin() { $('panel-login').hidden = false; $('panel-dash').hidden = true; }
+    function showDash() { $('panel-login').hidden = true; $('panel-dash').hidden = false; }
+
+    async function boot() {
+      var st = await api('/api/founder/access-status');
+      if (st.ok && st.data && st.data.data && st.data.data.accessKeyConfigured === false) {
+        $('login-msg').className = 'f-msg err';
+        $('login-msg').textContent = 'Server has no FOUNDER_ACCESS_KEY set. Add it to .env and restart.';
+      }
+      if (token()) {
+        var me = await api('/api/founder/session');
+        if (me.ok) { showDash(); renderDash(); return; }
+        setToken(null);
+      }
+      showLogin();
+    }
+
+    $('btn-continue').onclick = async function () {
+      var msg = $('login-msg');
+      msg.className = 'f-msg';
+      msg.textContent = 'Checking…';
+      var res = await api('/api/founder/verify', { method: 'POST', body: { accessKey: $('access-key').value } });
+      var tok = res.data && (res.data.token || (res.data.data && res.data.data.token));
+      if (!res.ok || !tok) {
+        msg.className = 'f-msg err';
+        if (res.status === 0) {
+          msg.textContent = 'Cannot reach the API. Start npm start and open http://127.0.0.1:PORT/founder.html (not the file on disk).';
+        } else if (res.status === 503) {
+          msg.textContent = 'FOUNDER_ACCESS_KEY is missing on the server. Add it to .env and restart npm start.';
+        } else {
+          msg.textContent = (res.data && res.data.error) || 'Access denied. Use the exact key from your .env file.';
+        }
+        return;
+      }
+      setToken(tok);
+      $('access-key').value = '';
+      showDash();
+      renderDash();
+    };
+    $('access-key').addEventListener('keydown', function (e) { if (e.key === 'Enter') $('btn-continue').click(); });
+    $('btn-logout').onclick = async function () {
+      try { await api('/api/founder/logout', { method: 'POST' }); } catch (e) {}
+      setToken(null);
+      showLogin();
+      $('login-msg').textContent = 'Logged out.';
+      $('login-msg').className = 'f-msg';
+    };
+
+    function fillKpis(rows) {
+      $('kpi-box').innerHTML = rows.map(function (r) {
+        return '<div class="kpi glass"><span class="kpi-label">' + esc(r[0]) + '</span><span class="kpi-value">' + (r[1] == null ? '—' : esc(r[1])) + '</span></div>';
+      }).join('');
+    }
+    function renderDaily(d) {
+      var box = $('daily-box');
+      if (!d || d.message || d.hasData === false) return empty(box);
+      var t = d.today || d;
+      box.className = '';
+      box.innerHTML = row('Date', t.dateKey || d.dateKey) + row('Plays', t.plays) + row('Completions', t.completions) +
+        row('Average score', t.averageScore) + row('Correct answers', t.correctAnswers) + row('Incorrect answers', t.incorrectAnswers) +
+        row('Correct %', t.correctPct != null ? t.correctPct + '%' : null) +
+        row('Streak activity', (d.streaks && d.streaks.activeCompletersWithStreak) || null);
+    }
+    function renderMp(d) {
+      var box = $('mp-box');
+      if (!d || d.message || d.hasData === false) return empty(box);
+      box.className = '';
+      box.innerHTML = row('Storage', d.storage) + row('Rooms created', d.roomsCreated) + row('Active matches', d.activeMatches) +
+        row('Completed matches', d.completedMatches) + row('Multiplayer errors', d.multiplayerErrors);
+    }
+    function renderAi(d) {
+      var box = $('ai-box');
+      if (!d || d.message) return empty(box);
+      box.className = '';
+      box.innerHTML = row('Date', d.date) + row('AI requests', d.requests) + row('Devices', d.devices) +
+        row('Free daily limit', d.freeDailyLimit) + row('AI errors', d.errors);
+    }
+    function renderShare(d) {
+      var box = $('share-box');
+      if (!d || d.message || d.hasData === false) return empty(box);
+      var bc = d.byChannel || {};
+      box.className = '';
+      box.innerHTML = row('Total initiations', d.totalShareInitiations != null ? d.totalShareInitiations : d.total) +
+        row('WhatsApp', d.whatsappShareInitiations != null ? d.whatsappShareInitiations : bc.whatsapp) +
+        row('Native', d.nativeShareInitiations != null ? d.nativeShareInitiations : bc.native) +
+        row('Copy', d.copyResultClicks != null ? d.copyResultClicks : bc.copy);
+    }
+
+    function renderLive(d) {
+      if (!d) return;
+      var ov = d.overview || {};
+      fillKpis([
+        ['Active battles', ov.activeBattles],
+        ['MP rooms', ov.activeMultiplayerRooms],
+        ['Active challenges', ov.activeChallenges],
+        ['Events today', ov.activityEventsToday],
+        ['Challenge opens', ov.challengeOpens],
+        ['Challenge played', ov.challengePlayed]
+      ]);
+      var live = $('live-box');
+      var act = d.activity || [];
+      if (!live) return;
+      if (!act.length) return empty(live);
+      live.className = '';
+      live.innerHTML = act.slice(0, 20).map(function (e) {
+        return '<div class="f-row"><span>' + esc((e.at || '').slice(11, 19)) + ' · ' + esc(e.type) + '</span><span>' + esc(e.message) + '</span></div>';
+      }).join('');
+      var bb = $('battle-box');
+      if (bb) {
+        var bs = d.battles || [];
+        if (!bs.length) empty(bb);
+        else {
+          bb.className = '';
+          bb.innerHTML = bs.map(function (b) {
+            return row((b.name || b.battleId) + ' · ' + b.status, (b.participantCount || 0) + ' players');
+          }).join('');
+        }
+      }
+      var cb = $('challenge-box');
+      if (cb) {
+        var ch = d.challenges || {};
+        cb.className = '';
+        cb.innerHTML = row('Created', ch.created) + row('Active', ch.active) + row('Opened', ch.opened) + row('Played', ch.played) + row('Beaten', ch.beaten);
+      }
+    }
+
+    var liveTimer = null;
+    async function pollLive() {
+      var lv = await api('/api/founder/live');
+      if (!lv.ok) {
+        if ($('live-dot')) $('live-dot').textContent = '● offline';
+        return;
+      }
+      if ($('live-dot')) $('live-dot').textContent = '● live';
+      renderLive(lv.data && lv.data.data);
+    }
+
+    async function renderDash() {
+      $('dash-meta').textContent = 'Authorized session · polling every 5s · no fake payments';
+      if (liveTimer) clearInterval(liveTimer);
+      liveTimer = setInterval(pollLive, 5000);
+      await pollLive();
+      var ov = await api('/api/founder/overview');
+      if (!ov.ok) {
+        if (ov.status === 401 || ov.status === 403) {
+          setToken(null); showLogin();
+          $('login-msg').textContent = 'Session expired. Enter the access key again.';
+          $('login-msg').className = 'f-msg err';
+          return;
+        }
+        empty($('daily-box'), 'Overview extra stats unavailable (MongoDB optional). Live panel above still works.');
+      } else {
+      var d = (ov.data && ov.data.data) || {};
+      var u = d.users || {}; var c = d.content || {}; var ai = d.ai || {};
+      var dr = d.dailyRiddle || {}; var mp = d.multiplayer || {};
+      fillKpis([
+        ['Users', u.total], ['Active riddles', c.activeRiddles],
+        ['Daily plays', dr.plays], ['Daily completions', dr.completions],
+        ['MP rooms', mp.roomsCreated], ['MP active', mp.activeMatches],
+        ['AI requests today', ai.requestsToday],
+        ['Share initiations', d.socialSharing && d.socialSharing.totalInitiations]
+      ]);
+      var daily = await api('/api/founder/daily-riddle');
+      renderDaily(daily.ok ? (daily.data && daily.data.data) : null);
+      var mpr = await api('/api/founder/multiplayer');
+      renderMp(mpr.ok ? (mpr.data && mpr.data.data) : null);
+      var air = await api('/api/founder/ai');
+      renderAi(air.ok ? (air.data && air.data.data) : null);
+      var an = await api('/api/founder/analytics');
+      if (an.ok && an.data && an.data.data && an.data.data.socialSharing) renderShare(an.data.data.socialSharing);
+      else empty($('share-box'));
+      }
+    }
+    boot();
+  })();
+  </script>
+</body>
+</html>

@@ -1,0 +1,1188 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>Game Arena — One Arena. Many Challenges.</title>
+  <meta name="description" content="Play free riddles online. Classic, timed, and survival modes with daily challenges, streaks, and achievements. Sharpen your mind with Riddle Realm." />
+  <meta name="keywords" content="riddles, brain games, puzzle game, daily riddle, logic puzzles, free riddle game" />
+  <meta name="author" content="Riddle Realm" />
+  <meta name="robots" content="index, follow" />
+  <meta name="theme-color" content="#0f0c29" />
+  <link rel="manifest" href="manifest.webmanifest" />
+  <link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png" />
+  <link rel="icon" type="image/png" sizes="16x16" href="icons/favicon-16.png" />
+  <link rel="apple-touch-icon" href="icons/icon-180.png" />
+  <link rel="apple-touch-icon" sizes="152x152" href="icons/icon-152.png" />
+  <link rel="apple-touch-icon" sizes="180x180" href="icons/icon-180.png" />
+  <link rel="apple-touch-icon" sizes="192x192" href="icons/icon-192.png" />
+  <meta name="color-scheme" content="dark light" />
+  <link rel="canonical" href="https://riddlerealm.app/" />
+
+  <!-- Open Graph -->
+  <meta property="og:type" content="website" />
+  <meta property="og:site_name" content="Riddle Realm" />
+  <meta property="og:title" content="Riddle Realm — Free Brain Riddle Game" />
+  <meta property="og:description" content="Can you beat the daily challenge? Play free riddles with streaks, missions, and modes." />
+  <meta property="og:url" content="https://riddlerealm.app/" />
+  <meta property="og:image" content="https://riddlerealm.app/og-image.png" />
+  <meta property="og:locale" content="en_US" />
+
+  <!-- Twitter -->
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="Riddle Realm — Free Brain Riddle Game" />
+  <meta name="twitter:description" content="Sharpen your mind with daily riddles, timed runs, and survival mode." />
+  <meta name="twitter:image" content="https://riddlerealm.app/og-image.png" />
+
+  <!-- PWA-ish basics (full PWA later) -->
+  <meta name="application-name" content="Riddle Realm" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-title" content="Riddle Realm" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Outfit:wght@600;700;800&display=swap" rel="stylesheet" />
+  <script>
+    tailwind = { config: { corePlugins: { preflight: false }, theme: { extend: {
+      colors: { arena: { ink: '#070714', neon: '#7c5cff', hot: '#ff4d8d', gold: '#f5c542' } },
+      fontFamily: { arena: ['Outfit', 'Inter', 'sans-serif'] }
+    } } } };
+  </script>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="style.css" />
+
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "WebApplication",
+    "name": "Riddle Realm",
+    "description": "Free browser riddle game with daily challenges, multiple modes, and progression.",
+    "applicationCategory": "GameApplication",
+    "operatingSystem": "Any",
+    "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" }
+  }
+  </script>
+</head>
+<body>
+  <a class="skip-link" href="#app">Skip to content</a>
+  <!-- ========== SPLASH SCREEN ========== -->
+  <div id="splash" class="screen splash-screen" aria-hidden="false">
+    <div class="splash-content">
+      <div class="logo-mark" aria-hidden="true">
+        <div class="logo-ring"></div>
+        <div class="logo-core">?</div>
+      </div>
+      <h1 class="splash-title">Game Arena</h1>
+      <p class="splash-tagline">One Arena. Many Challenges.</p>
+      <div class="splash-loader" aria-label="Loading">
+        <div class="loader-bar"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========== APP SHELL ========== -->
+  <div id="app" class="app hidden" aria-hidden="true">
+    <!-- Top Bar -->
+    <header class="top-bar" role="banner">
+      <div class="top-bar-left">
+        <button id="btn-back" class="icon-btn hidden" aria-label="Go back" title="Back">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
+        </button>
+        <div class="brand" id="brand" data-screen="arena" role="button" tabindex="0" title="Game Arena">
+          <span class="brand-mark">?</span>
+          <span class="brand-text">Game Arena</span>
+        </div>
+      </div>
+      <div class="top-bar-right">
+        <div class="resource-pill" id="coins-display" title="Coins">
+          <span class="resource-icon">🪙</span>
+          <span class="resource-value" id="coins-value">0</span>
+        </div>
+        <div class="resource-pill" id="hearts-display" title="Hearts">
+          <span class="resource-icon">❤️</span>
+          <span class="resource-value" id="hearts-value">5</span>
+        </div>
+        <button type="button" class="icon-btn" id="btn-music-toggle" aria-label="Music" title="Music on/off">🔊</button>
+        <button type="button" class="btn-secondary" id="btn-logout-arena" style="padding:6px 10px">Logout</button>
+        <button id="btn-theme" class="icon-btn" aria-label="Toggle theme" title="Toggle light/dark mode">
+          <svg class="icon-sun" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>
+          <svg class="icon-moon hidden" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+        </button>
+      </div>
+    </header>
+
+    <!-- Main Content Area -->
+    <main id="main" class="main" role="main">
+      <!-- GAME ARENA LANDING -->
+      <section id="screen-arena" class="screen-panel active" aria-label="Game Arena">
+        <div class="arena-landing px-1 pb-8">
+          <header class="text-center pt-2 pb-4">
+            <div class="mx-auto mb-3 flex h-16 w-16 items-center justify-center rounded-2xl text-3xl font-extrabold text-white" style="background:linear-gradient(135deg,#7c5cff,#ff4d8d);box-shadow:0 0 28px rgba(124,92,255,.45)">GA</div>
+            <p class="text-xs font-semibold tracking-[0.22em] uppercase text-violet-300">Game Arena</p>
+            <h1 class="mt-2 font-arena text-3xl font-extrabold leading-tight sm:text-4xl">One Arena.<br />Many Challenges.</h1>
+            <p class="mx-auto mt-3 max-w-md text-sm text-[var(--text-secondary)]">A growing platform of competitive mind games. Start with the Riddle Game — more titles arrive later.</p>
+            <div class="mt-5 flex flex-col gap-3 sm:flex-row sm:justify-center">
+              <button type="button" class="btn-primary" data-screen="home">Play Now</button>
+              <button type="button" class="btn-secondary" data-screen="library">Explore Games</button>
+            </div>
+          </header>
+
+          <h2 class="mb-3 text-sm font-bold uppercase tracking-wider text-[var(--text-muted)]">Featured Games</h2>
+          <div class="grid gap-3">
+            <button type="button" class="action-card primary text-left" data-screen="home">
+              <div class="action-icon">🧩</div>
+              <div class="action-content">
+                <span class="action-title">Riddle Game</span>
+                <span class="action-sub">Live · Puzzle</span>
+              </div>
+              <div class="action-badge">Play</div>
+            </button>
+            <button type="button" class="action-card text-left" data-game="reflex">
+              <div class="action-icon">⚡</div>
+              <div class="action-content">
+                <span class="action-title">Reflex Challenge</span>
+                <span class="action-sub">Live · Arcade</span>
+              </div>
+              <div class="action-badge">Play</div>
+            </button>
+            <button type="button" class="action-card text-left" data-game="trivia">
+              <div class="action-icon">🎯</div>
+              <div class="action-content">
+                <span class="action-title">Trivia Rush</span>
+                <span class="action-sub">Live · Quiz</span>
+              </div>
+              <div class="action-badge">Play</div>
+            </button>
+          </div>
+
+          <h2 class="mb-3 mt-6 text-sm font-bold uppercase tracking-wider text-[var(--text-muted)]">Why Arena</h2>
+          <div class="grid grid-cols-2 gap-3">
+            <div class="glass kpi"><span class="kpi-label">Shared XP</span><span class="kpi-value">Levels</span></div>
+            <div class="glass kpi"><span class="kpi-label">Coins</span><span class="kpi-value">Rewards</span></div>
+            <div class="glass kpi"><span class="kpi-label">Streaks</span><span class="kpi-value">Daily</span></div>
+            <div class="glass kpi"><span class="kpi-label">Boards</span><span class="kpi-value">Ranks</span></div>
+          </div>
+
+          <div class="plans-grid mt-6">
+            <div class="plan-card glass">
+              <h3>Free</h3>
+              <ul class="plan-list">
+                <li>✓ Play the Riddle Game</li>
+                <li>✓ Shared XP, coins, streaks</li>
+                <li>✓ Basic multiplayer &amp; battles</li>
+              </ul>
+            </div>
+            <div class="plan-card glass plan-card-pro">
+              <h3>Pro</h3>
+              <ul class="plan-list">
+                <li>✓ Advanced rooms &amp; stats</li>
+                <li>✓ Extra AI companion tools</li>
+                <li>⭐ Payment not connected yet</li>
+              </ul>
+              <button type="button" class="btn-primary" data-screen="plans">See plans</button>
+            </div>
+          </div>
+
+          <div class="mt-6 flex flex-col sm:flex-row gap-3 justify-center">
+            <button type="button" class="btn-secondary" data-screen="auth">Sign up / Log in</button>
+          </div>
+          <footer class="mt-8 pb-2 text-center text-xs text-[var(--text-muted)]">
+            Game Arena · Riddle Game #1 · Owner tools stay private
+          </footer>
+        </div>
+      </section>
+
+      <!-- GAME LIBRARY -->
+      <section id="screen-auth" class="screen-panel" aria-label="Sign up or log in" hidden>
+        <div class="panel-header">
+          <h2>Player account</h2>
+          <p class="panel-sub">Create a player account or log in. Owner access is not available here.</p>
+        </div>
+        <div class="glass" style="padding:16px">
+          <label class="mp-label">Display name</label>
+          <input id="app-auth-name" class="mp-input" placeholder="Name" />
+          <label class="mp-label">Username</label>
+          <input id="app-auth-user" class="mp-input" autocomplete="username" />
+          <label class="mp-label">Email (sign up)</label>
+          <input id="app-auth-email" class="mp-input" type="email" autocomplete="email" />
+          <label class="mp-label">Password</label>
+          <input id="app-auth-pass" class="mp-input" type="password" autocomplete="current-password" />
+          <p class="f-msg" id="app-auth-msg"></p>
+          <button type="button" class="btn-primary" id="app-auth-register">Create account</button>
+          <button type="button" class="btn-secondary" id="app-auth-login">Log in</button>
+        </div>
+        <p class="panel-sub" id="app-auth-status">Not signed in. You can still play on this device.</p>
+      </section>
+
+      <section id="screen-library" class="screen-panel" aria-label="Game Library" hidden>
+        <div class="panel-header">
+          <h2>Game Library</h2>
+          <p class="panel-sub">Only live titles can be played. Others show Coming Soon.</p>
+        </div>
+        <div id="arena-featured" class="grid gap-3 mb-4"></div>
+        <h3 class="text-sm font-bold uppercase tracking-wider text-[var(--text-muted)]">Recently Played</h3>
+        <div id="arena-recent" class="grid gap-3 mb-4"></div>
+        <h3 class="text-sm font-bold uppercase tracking-wider text-[var(--text-muted)]">All Games</h3>
+        <div id="arena-library" class="grid gap-3"></div>
+      </section>
+
+      <section id="screen-minigame" class="screen-panel" aria-label="Arena Game" hidden>
+        <div id="mg-setup"></div>
+        <div id="mg-play" hidden></div>
+        <div id="mg-results" hidden></div>
+      </section>
+
+      <!-- HOME SCREEN -->
+      <section id="screen-home" class="screen-panel" aria-label="Home">
+        <div class="hero">
+          <div class="hero-greeting">
+            <p class="greeting-text" id="greeting-text">Welcome back,</p>
+            <h2 class="player-name" id="player-name">Riddler</h2>
+          </div>
+          <div class="level-badge" id="level-badge" title="Player level">
+            <span class="level-label">LVL</span>
+            <span class="level-num" id="level-num">1</span>
+          </div>
+        </div>
+
+        <div class="xp-bar-container" aria-label="Experience progress">
+          <div class="xp-bar">
+            <div class="xp-fill" id="xp-fill" style="width: 12%"></div>
+          </div>
+          <div class="xp-text">
+            <span id="xp-current">0</span> / <span id="xp-needed">100</span> XP
+          </div>
+        </div>
+
+        <!-- Phase 6: Login reward + streak strip -->
+        <div class="streak-strip glass" id="streak-strip">
+          <div class="streak-info">
+            <span class="streak-fire">🔥</span>
+            <span class="streak-text">Streak <strong id="home-streak-num">0</strong> days</span>
+          </div>
+          <button class="login-claim-btn" id="btn-claim-login" type="button">
+            Claim +15 XP
+          </button>
+        </div>
+
+        <!-- Phase 10: Daily Missions -->
+        <div class="missions-panel glass" id="missions-panel">
+          <div class="missions-header">
+            <h3>🎯 Daily Missions</h3>
+            <span class="missions-count" id="missions-count">0/3</span>
+          </div>
+          <div class="missions-list" id="missions-list"></div>
+          <div class="missions-header missions-header-weekly">
+            <h3>📅 Weekly Challenges</h3>
+            <span class="missions-count" id="weekly-count">0/2</span>
+          </div>
+          <div class="missions-list" id="weekly-list"></div>
+          <details class="mission-history" id="mission-history">
+            <summary>Mission history</summary>
+            <div id="mission-history-list" class="mission-history-list"></div>
+          </details>
+        </div>
+
+        <!-- Primary Actions -->
+        <div class="action-grid">
+          <button class="action-card primary" data-screen="daily" aria-label="Daily Challenge">
+            <div class="action-icon daily-icon">📅</div>
+            <div class="action-content">
+              <span class="action-title">Daily Challenge</span>
+              <span class="action-sub">New riddle every day</span>
+            </div>
+            <div class="action-badge" id="daily-status">Ready</div>
+          </button>
+
+          <button class="action-card" data-screen="modes" aria-label="Game Modes">
+            <div class="action-icon">🕹️</div>
+            <div class="action-content">
+              <span class="action-title">Game Modes</span>
+              <span class="action-sub">Classic · Timed · Survival</span>
+            </div>
+          </button>
+
+          <button class="action-card" data-screen="categories" aria-label="Browse Categories">
+            <div class="action-icon">📂</div>
+            <div class="action-content">
+              <span class="action-title">Categories</span>
+              <span class="action-sub">12 topics · 100+ riddles</span>
+            </div>
+          </button>
+
+          <button class="action-card" data-mode="classic" aria-label="Quick Play">
+            <div class="action-icon">▶️</div>
+            <div class="action-content">
+              <span class="action-title">Quick Play</span>
+              <span class="action-sub">Classic mode · 10 riddles</span>
+            </div>
+          </button>
+
+          <button class="action-card" data-screen="multiplayer" aria-label="Play Multiplayer">
+            <div class="action-icon">🤝</div>
+            <div class="action-content">
+              <span class="action-title">Play Multiplayer</span>
+              <span class="action-sub">Private live rooms</span>
+            </div>
+            <div class="action-badge">Live</div>
+          </button>
+
+          <button class="action-card" data-screen="battle" aria-label="Riddle Game Battle">
+            <div class="action-icon">⚔️</div>
+            <div class="action-content">
+              <span class="action-title">Riddle Battle</span>
+              <span class="action-sub">Daily · Weekly · Special</span>
+            </div>
+          </button>
+
+          <button class="action-card" data-screen="challenge" aria-label="Score Challenge">
+            <div class="action-icon">🔥</div>
+            <div class="action-content">
+              <span class="action-title">Score Challenge</span>
+              <span class="action-sub">Beat a friend’s score</span>
+            </div>
+          </button>
+        </div>
+
+        <!-- Secondary Navigation -->
+        <div class="secondary-nav">
+          <button class="nav-chip" data-screen="profile" aria-label="Player Profile">
+            <span class="chip-icon">👤</span>
+            <span>Profile</span>
+          </button>
+          <button class="nav-chip" data-screen="achievements" aria-label="Achievements">
+            <span class="chip-icon">🏆</span>
+            <span>Achievements</span>
+          </button>
+          <button class="nav-chip" data-screen="shop" aria-label="Shop">
+            <span class="chip-icon">🛒</span>
+            <span>Shop</span>
+          </button>
+          <button class="nav-chip" data-screen="ai" aria-label="AI Assistant">
+            <span class="chip-icon">🤖</span>
+            <span>AI</span>
+          </button>
+          <button class="nav-chip" data-screen="plans" aria-label="Free vs Pro">
+            <span class="chip-icon">💎</span>
+            <span>Plans</span>
+          </button>
+          <button class="nav-chip" data-screen="leaderboard" aria-label="Leaderboard">
+            <span class="chip-icon">📊</span>
+            <span>Ranks</span>
+          </button>
+          <button class="nav-chip" data-screen="settings" aria-label="Settings">
+            <span class="chip-icon">⚙️</span>
+            <span>Settings</span>
+          </button>
+        </div>
+      </section>
+
+      <!-- DAILY CHALLENGE -->
+      <section id="screen-daily" class="screen-panel" aria-label="Daily Challenge" hidden>
+        <div class="panel-header">
+          <h2>Daily Challenge</h2>
+          <p class="panel-sub" id="daily-date-label">A fresh set every day. Same for everyone today.</p>
+        </div>
+        <div class="daily-card glass" id="daily-card">
+          <div class="daily-icon">📅</div>
+          <h3 id="daily-title">Today's Challenge</h3>
+          <p class="daily-meta" id="daily-meta">5 riddles · Bonus rewards</p>
+          <div class="daily-rewards">
+            <span class="daily-reward-pill">+50 XP</span>
+            <span class="daily-reward-pill">+25 🪙</span>
+          </div>
+          <p class="daily-streak" id="daily-streak-label">Streak: 0 days</p>
+          <button class="btn-primary" id="btn-start-daily">Start Challenge</button>
+          <p class="daily-done hidden" id="daily-done-msg">✅ Completed for today. Come back tomorrow!</p>
+        </div>
+
+        <div class="milestones-section" id="milestones-section">
+          <h3 class="milestones-title">Streak Milestones</h3>
+          <div class="milestones-row" id="milestones-row">
+            <!-- filled by JS -->
+          </div>
+        </div>
+      </section>
+
+      <!-- GAME MODES -->
+      <section id="screen-modes" class="screen-panel" aria-label="Game Modes" hidden>
+        <div class="panel-header">
+          <h2>Game Modes</h2>
+          <p class="panel-sub">Pick a style and start solving.</p>
+        </div>
+        <div class="modes-grid">
+          <button class="mode-card glass" data-mode="classic">
+            <span class="mode-emoji">🎯</span>
+            <span class="mode-title">Classic</span>
+            <span class="mode-desc">10 riddles · 5 lives · relaxed pace</span>
+          </button>
+          <button class="mode-card glass" data-mode="timed">
+            <span class="mode-emoji">⏱️</span>
+            <span class="mode-title">Timed</span>
+            <span class="mode-desc">60 seconds · score as many as you can</span>
+          </button>
+          <button class="mode-card glass" data-mode="survival">
+            <span class="mode-emoji">💀</span>
+            <span class="mode-title">Survival</span>
+            <span class="mode-desc">3 lives · infinite riddles · how far?</span>
+          </button>
+          <button class="mode-card glass" data-mode="category">
+            <span class="mode-emoji">📂</span>
+            <span class="mode-title">Category</span>
+            <span class="mode-desc">Choose a topic and master it</span>
+          </button>
+          <button class="mode-card glass" type="button" data-screen="multiplayer">
+            <span class="mode-emoji">🤝</span>
+            <span class="mode-title">Multiplayer</span>
+            <span class="mode-desc">Create or join a private 2-player room</span>
+          </button>
+        </div>
+      </section>
+
+      <!-- MULTIPLAYER LOBBY -->
+      <section id="screen-multiplayer" class="screen-panel" aria-label="Multiplayer" hidden>
+        <div class="panel-header">
+          <h2>Multiplayer</h2>
+          <p class="panel-sub">Private host rooms. Guests only. Separate from public Battles.</p>
+        </div>
+
+        <div id="mp-home" class="mp-home">
+          <div class="glass mp-card">
+            <h3>Create a room</h3>
+            <p>Pick capacity, get a code and a share link.</p>
+            <label class="mp-label" for="mp-cap">Maximum players (host chooses)</label>
+            <select id="mp-cap" class="mp-input">
+              <option value="2" selected>2</option>
+              <option value="4">4</option>
+              <option value="6">6 — Pro coming soon</option>
+              <option value="8">8 — Pro coming soon</option>
+              <option value="10">10 — Pro coming soon</option>
+            </select>
+            <label class="mp-label" for="mp-time">Game time</label>
+            <select id="mp-time" class="mp-input">
+              <option value="5">5 minutes</option>
+              <option value="10" selected>10 minutes</option>
+              <option value="15">15 minutes</option>
+              <option value="20">20 minutes — Pro coming soon</option>
+            </select>
+            <button type="button" class="btn-primary" id="btn-mp-create">Create Room</button>
+          </div>
+          <div class="glass mp-card">
+            <h3>Join a room</h3>
+            <label class="mp-label" for="mp-join-code">Room code</label>
+            <input id="mp-join-code" class="mp-input" maxlength="8" placeholder="ABC123" autocomplete="off" spellcheck="false" />
+            <button type="button" class="btn-primary" id="btn-mp-join">Join Room</button>
+          </div>
+        </div>
+
+        <div id="mp-lobby" class="mp-lobby" hidden>
+          <div class="glass mp-code-card">
+            <p class="mp-role" id="mp-role-banner">Guest lobby</p>
+            <span class="mp-code-label">Room code</span>
+            <div class="mp-code-row">
+              <strong id="mp-room-code">------</strong>
+              <button type="button" class="btn-secondary" id="btn-mp-copy">Copy</button>
+            </div>
+            <p class="mp-status" id="mp-status-text">Waiting for players.</p>
+            <p class="mp-status" id="mp-room-link"></p>
+            <button type="button" class="btn-secondary" id="btn-mp-share">Share room link</button>
+          </div>
+          <div id="mp-pending" class="mp-pending"></div>
+          <div class="mp-slots" id="mp-slots"></div>
+          <div id="mp-live-ranks" class="glass mp-card" hidden></div>
+          <div id="mp-loading" class="glass mp-card" hidden>
+            <h3>LOADING GAME...</h3>
+            <p>Preparing your Riddle Game...</p>
+          </div>
+          <div class="mp-actions">
+            <button type="button" class="btn-primary" id="btn-mp-ready">I'm Ready</button>
+            <button type="button" class="btn-primary" id="btn-mp-start" hidden>Start Game</button>
+            <button type="button" class="btn-secondary" id="btn-mp-leave">Leave Room</button>
+          </div>
+          <p class="mp-guest" id="mp-guest-id"></p>
+          <div id="mp-play" class="glass mp-card" hidden>
+            <p class="mp-clock" id="mp-clock">⏱️ --:--</p>
+            <p class="panel-sub" id="mp-q-meta"></p>
+            <h3 id="mp-q-text">Question</h3>
+            <div id="mp-q-opts" class="battle-opts"></div>
+          </div>
+          <div id="mp-results" class="glass mp-card" hidden></div>
+        </div>
+      </section>
+
+      <!-- PUBLIC BATTLE -->
+      <section id="screen-battle" class="screen-panel" aria-label="Riddle Battle" hidden>
+        <div class="panel-header">
+          <h2>Riddle Battle</h2>
+          <p class="panel-sub">Public events. Not a private multiplayer room.</p>
+        </div>
+        <div class="glass mp-card" id="battle-create">
+          <h3>Create a Battle</h3>
+          <label class="mp-label" for="battle-name">Battle name</label>
+          <input id="battle-name" class="mp-input" maxlength="48" placeholder="Weekend Riddle Battle" />
+          <label class="mp-label" for="battle-desc">Description</label>
+          <input id="battle-desc" class="mp-input" maxlength="120" placeholder="Can you reach #1?" />
+          <label class="mp-label" for="battle-type">Type</label>
+          <select id="battle-type" class="mp-input">
+            <option value="special" selected>Special</option>
+            <option value="daily">Daily</option>
+            <option value="weekly">Weekly</option>
+          </select>
+          <label class="mp-label" for="battle-timer">Battle time</label>
+          <select id="battle-timer" class="mp-input">
+            <option value="5">5 minutes</option>
+            <option value="10" selected>10 minutes</option>
+            <option value="15">15 minutes</option>
+            <option value="20">20 minutes</option>
+          </select>
+          <button type="button" class="btn-primary" id="btn-battle-create">Start Riddle Game Battle</button>
+        </div>
+        <div id="battle-created" class="glass mp-card" hidden></div>
+        <div id="battle-list" class="battle-list"></div>
+        <p id="battle-timer-live" class="mp-status" hidden></p>
+        <p id="battle-leader" class="mp-status" hidden></p>
+        <div id="battle-play" class="glass mp-card" hidden>
+          <p class="panel-sub" id="battle-q-meta"></p>
+          <h3 id="battle-q-text">Question</h3>
+          <div id="battle-q-opts" class="battle-opts"></div>
+        </div>
+        <div id="battle-result" class="glass mp-card" hidden></div>
+      </section>
+
+      <!-- SCORE CHALLENGE -->
+      <section id="screen-challenge" class="screen-panel" aria-label="Score Challenge" hidden>
+        <div class="panel-header">
+          <h2>Score Challenge</h2>
+          <p class="panel-sub">Challenge a friend with a unique link. Separate from Battle and Multiplayer.</p>
+        </div>
+        <div class="glass mp-card" id="challenge-home">
+          <label class="mp-label" for="challenge-score">Your score to defend</label>
+          <input id="challenge-score" class="mp-input" type="number" min="0" max="5000" placeholder="850" />
+          <button type="button" class="btn-primary" id="btn-ch-create">Create Challenge Link</button>
+          <div id="challenge-out" class="mp-status"></div>
+          <div id="challenge-share-row" hidden>
+            <button type="button" class="btn-secondary" data-share="whatsapp" id="btn-ch-wa">WhatsApp</button>
+            <button type="button" class="btn-secondary" data-share="copy" id="btn-ch-copy">Copy link</button>
+            <button type="button" class="btn-secondary" data-share="native" id="btn-ch-native">Share</button>
+          </div>
+        </div>
+        <div class="glass mp-card" id="challenge-incoming" hidden>
+          <h3 id="ch-in-title">Incoming challenge</h3>
+          <p id="ch-in-meta" class="panel-sub"></p>
+          <button type="button" class="btn-primary" id="btn-ch-accept">Play Classic mode</button>
+          <button type="button" class="btn-secondary" id="btn-ch-submit">Submit my last score</button>
+        </div>
+        <div class="glass mp-card" id="challenge-done" hidden></div>
+      </section>
+
+      <!-- CATEGORIES -->
+      <section id="screen-categories" class="screen-panel" aria-label="Categories" hidden>
+        <div class="panel-header">
+          <h2>Categories</h2>
+          <p class="panel-sub">Choose a topic and start solving. 100+ riddles ready.</p>
+        </div>
+        <div class="category-grid" id="category-grid">
+          <!-- Populated by JS later; static placeholders for now -->
+          <button class="cat-card" data-cat="logic"><span class="cat-emoji">🧠</span><span class="cat-name">Logic</span></button>
+          <button class="cat-card" data-cat="math"><span class="cat-emoji">🔢</span><span class="cat-name">Mathematics</span></button>
+          <button class="cat-card" data-cat="science"><span class="cat-emoji">🔬</span><span class="cat-name">Science</span></button>
+          <button class="cat-card" data-cat="programming"><span class="cat-emoji">💻</span><span class="cat-name">Programming</span></button>
+          <button class="cat-card" data-cat="tech"><span class="cat-emoji">📱</span><span class="cat-name">Technology</span></button>
+          <button class="cat-card" data-cat="history"><span class="cat-emoji">🏛️</span><span class="cat-name">History</span></button>
+          <button class="cat-card" data-cat="geography"><span class="cat-emoji">🌍</span><span class="cat-name">Geography</span></button>
+          <button class="cat-card" data-cat="animals"><span class="cat-emoji">🦁</span><span class="cat-name">Animals</span></button>
+          <button class="cat-card" data-cat="food"><span class="cat-emoji">🍕</span><span class="cat-name">Food</span></button>
+          <button class="cat-card" data-cat="movies"><span class="cat-emoji">🎬</span><span class="cat-name">Movies</span></button>
+          <button class="cat-card" data-cat="sports"><span class="cat-emoji">⚽</span><span class="cat-name">Sports</span></button>
+          <button class="cat-card" data-cat="general"><span class="cat-emoji">💡</span><span class="cat-name">General Knowledge</span></button>
+        </div>
+      </section>
+
+
+
+      <!-- ========== GAME SCREEN ========== -->
+      <section id="screen-game" class="screen-panel" aria-label="Game" hidden>
+        <div class="game-header">
+          <div class="game-stat">
+            <span class="game-stat-label">Score</span>
+            <span class="game-stat-value" id="game-score">0</span>
+          </div>
+          <div class="game-stat game-progress-wrap">
+            <span class="game-stat-label">Progress</span>
+            <span class="game-stat-value" id="game-progress">1 / 8</span>
+          </div>
+          <div class="game-stat lives">
+            <span class="game-stat-value" id="game-lives" aria-label="Lives remaining">❤️❤️❤️❤️❤️</span>
+          </div>
+        </div>
+        <div class="game-progress-bar" aria-hidden="true">
+          <div class="game-progress-fill" id="game-progress-fill" style="width: 0%"></div>
+        </div>
+        <div id="game-container">
+          <!-- Filled dynamically by UI.renderGameScreen() -->
+        </div>
+      </section>
+
+      <!-- PROFILE -->
+      <section id="screen-profile" class="screen-panel" aria-label="Player Profile" hidden>
+        <div class="panel-header">
+          <h2>Profile</h2>
+          <p class="panel-sub">Your journey so far.</p>
+        </div>
+        <div class="profile-card glass">
+          <div class="avatar-large" id="avatar-display">🧙</div>
+          <h3 id="profile-name">Riddler</h3>
+          <p class="profile-rank" id="profile-rank">Novice Thinker</p>
+          <div class="profile-stats">
+            <div class="stat">
+              <span class="stat-value" id="stat-solved">0</span>
+              <span class="stat-label">Solved</span>
+            </div>
+            <div class="stat">
+              <span class="stat-value" id="stat-streak">0</span>
+              <span class="stat-label">Best Streak</span>
+            </div>
+            <div class="stat">
+              <span class="stat-value" id="stat-accuracy">—</span>
+              <span class="stat-label">Accuracy</span>
+            </div>
+          </div>
+        </div>
+        <div class="stats-grid" id="stats-grid">
+          <div class="stat-card glass">
+            <span class="stat-card-value" id="stat-level">1</span>
+            <span class="stat-card-label">Level</span>
+          </div>
+          <div class="stat-card glass">
+            <span class="stat-card-value" id="stat-coins">0</span>
+            <span class="stat-card-label">Coins</span>
+          </div>
+          <div class="stat-card glass">
+            <span class="stat-card-value" id="stat-best-score">0</span>
+            <span class="stat-card-label">Best Score</span>
+          </div>
+          <div class="stat-card glass">
+            <span class="stat-card-value" id="stat-games">0</span>
+            <span class="stat-card-label">Games</span>
+          </div>
+          <div class="stat-card glass">
+            <span class="stat-card-value" id="stat-correct">0</span>
+            <span class="stat-card-label">Correct</span>
+          </div>
+          <div class="stat-card glass">
+            <span class="stat-card-value" id="stat-wrong">0</span>
+            <span class="stat-card-label">Wrong</span>
+          </div>
+        </div>
+
+        <div class="profile-xp glass">
+          <div class="profile-xp-header">
+            <span>Level <span id="profile-level-num">1</span></span>
+            <span id="profile-xp-text">0 / 100 XP</span>
+          </div>
+          <div class="xp-bar">
+            <div class="xp-fill" id="profile-xp-fill" style="width: 0%"></div>
+          </div>
+        </div>
+
+        <div class="hint-stats glass" id="hint-stats-card">
+          <h3 class="hint-stats-title">💡 Hint Statistics</h3>
+          <div class="hint-stats-grid">
+            <div class="hint-stat">
+              <span class="hint-stat-value" id="hint-stat-total">0</span>
+              <span class="hint-stat-label">Used</span>
+            </div>
+            <div class="hint-stat">
+              <span class="hint-stat-value" id="hint-stat-spent">0</span>
+              <span class="hint-stat-label">Coins spent</span>
+            </div>
+            <div class="hint-stat">
+              <span class="hint-stat-value" id="hint-stat-clue">0</span>
+              <span class="hint-stat-label">Clues</span>
+            </div>
+            <div class="hint-stat">
+              <span class="hint-stat-value" id="hint-stat-letter">0</span>
+              <span class="hint-stat-label">Letters</span>
+            </div>
+            <div class="hint-stat">
+              <span class="hint-stat-value" id="hint-stat-5050">0</span>
+              <span class="hint-stat-label">50/50</span>
+            </div>
+            <div class="hint-stat">
+              <span class="hint-stat-value" id="hint-stat-skip">0</span>
+              <span class="hint-stat-label">Skips</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ACHIEVEMENTS -->
+      <section id="screen-achievements" class="screen-panel" aria-label="Achievements" hidden>
+        <div class="panel-header">
+          <h2>Achievements</h2>
+          <p class="panel-sub" id="achievements-sub">Unlock badges as you play. New goals appear as you improve.</p>
+        </div>
+        <div class="achievements-list" id="achievements-list">
+          <!-- filled by JS -->
+        </div>
+      </section>
+
+      <!-- SHOP -->
+      <section id="screen-shop" class="screen-panel" aria-label="Shop" hidden>
+        <div class="panel-header">
+          <h2>Shop</h2>
+          <p class="panel-sub">Curated Free & Pro cosmetics · No pay-to-win. <span id="shop-coins">0</span> 🪙</p>
+        </div>
+        <div class="shop-tabs" id="shop-tabs">
+          <button class="shop-tab active" data-shop-tab="avatars">Avatars</button>
+          <button class="shop-tab" data-shop-tab="themes">Themes</button>
+          <button class="shop-tab" data-shop-tab="packs">Hint Packs</button>
+        </div>
+        <div class="shop-grid" id="shop-grid">
+          <!-- filled by JS -->
+        </div>
+      </section>
+
+      <!-- LEADERBOARD -->
+      <section id="screen-leaderboard" class="screen-panel" aria-label="Leaderboard" hidden>
+        <div class="panel-header">
+          <h2>Leaderboards</h2>
+          <p class="panel-sub">Overall and Riddle Game ranks. If nobody has a real score yet: No leaderboard results yet.</p>
+        </div>
+        <div class="shop-tabs" id="lb-tabs">
+          <button type="button" class="shop-tab active" data-lb-tab="local">Overall / Riddle Game</button>
+          <button type="button" class="shop-tab" data-lb-tab="multiplayer">Multiplayer</button>
+          <button type="button" class="shop-tab" data-lb-tab="battle">Riddle Battle</button>
+        </div>
+        <div id="lb-panel-multiplayer" class="lb-section" hidden>
+          <h3 class="lb-title">Global Multiplayer</h3>
+          <p class="lb-hint">Wins first, then points, then fewer games. No fake players.</p>
+          <div id="lb-mp-global" class="lb-list"></div>
+        </div>
+        <div id="lb-panel-battle" class="lb-section" hidden>
+          <h3 class="lb-title">Live Battle boards</h3>
+          <div id="lb-battle-global" class="lb-list"></div>
+        </div>
+        <div id="lb-panel-local">
+        <div class="lb-summary glass" id="lb-summary">
+          <div class="lb-best">
+            <span class="lb-best-label">Personal Best</span>
+            <span class="lb-best-value" id="lb-personal-best">0</span>
+          </div>
+        </div>
+        <div id="lb-arena-games"></div>
+        <div class="lb-section">
+          <h3 class="lb-title">All-Time Top Scores</h3>
+          <div id="lb-alltime" class="lb-list"></div>
+        </div>
+        <div class="lb-section">
+          <h3 class="lb-title">Today</h3>
+          <div id="lb-daily" class="lb-list"></div>
+        </div>
+        <div class="lb-section">
+          <h3 class="lb-title">This Week</h3>
+          <div id="lb-weekly" class="lb-list"></div>
+        </div>
+        <div class="lb-section">
+          <h3 class="lb-title">Best by Mode</h3>
+          <div id="lb-modes" class="lb-list"></div>
+        </div>
+        <div class="lb-section">
+          <h3 class="lb-title">Friends & Challenges</h3>
+          <p class="lb-hint">Scores from challenges you open appear here. Share yours with Challenge a Friend.</p>
+          <div id="lb-friends" class="lb-list"></div>
+        </div>
+        <p class="lb-note glass">Personal bests stay on this device. Multiplayer and Battle ranks come from the server when it is running.</p>
+        </div>
+      </section>
+
+      
+      
+      
+      <!-- ROLE DASHBOARDS (Phase 22) -->
+<section id="screen-founder" class="screen-panel" aria-label="Owner Dashboard" hidden>
+        <div class="panel-header">
+          <h2>Owner Dashboard</h2>
+          <p class="panel-sub">Private admin overview. Transferable to a future owner. No passwords or keys in this page.</p>
+        </div>
+        <div class="founder-nav">
+          <button type="button" class="seg-btn active" data-founder-tab="overview">Overview</button>
+          <button type="button" class="seg-btn" data-founder-tab="users">Users</button>
+          <button type="button" class="seg-btn" data-founder-tab="games">Games</button>
+          <button type="button" class="seg-btn" data-founder-tab="riddles">Riddle Game</button>
+          <button type="button" class="seg-btn" data-founder-tab="boards">Leaderboards</button>
+          <button type="button" class="seg-btn" data-founder-tab="ai">AI</button>
+          <button type="button" class="seg-btn" data-founder-tab="settings">Settings</button>
+        </div>
+        <div id="founder-overview" class="founder-panel">
+          <div class="kpi-grid" id="founder-kpis">
+            <div class="kpi glass"><span class="kpi-label">Loading…</span><span class="kpi-value">—</span></div>
+          </div>
+        </div>
+        <div id="founder-users" class="founder-panel" hidden>
+          <div id="founder-users-table" class="founder-table glass">Sign in as founder and load users.</div>
+        </div>
+        <div id="founder-riddles" class="founder-panel" hidden>
+          <div id="founder-riddles-box" class="glass" style="padding:14px">Riddle summary loads from the API.</div>
+        </div>
+        <div id="founder-games" class="founder-panel" hidden>
+          <div class="glass" style="padding:14px" id="owner-games-box">Game play counts load from this device after real sessions.</div>
+        </div>
+        <div id="founder-boards" class="founder-panel" hidden>
+          <div class="glass" style="padding:14px">Leaderboards use verified scores only. No fake players.</div>
+        </div>
+        <div id="founder-ai" class="founder-panel" hidden>
+          <div class="glass" style="padding:14px">AI keys stay on the server. Payment and model credentials are not stored in this page.</div>
+        </div>
+        <div id="founder-settings" class="founder-panel" hidden>
+          <div class="glass" style="padding:14px">Platform settings belong in server environment variables. This dashboard does not store secrets.</div>
+        </div>
+        <p class="plans-footnote">Planned later: AI analytics, monetization, reports. Server rejects non-founder access to these APIs.</p>
+      </section>
+
+      <!-- ACCOUNT (Phase 21 — optional) -->
+<!-- AI ASSISTANT -->
+      <section id="screen-ai" class="screen-panel" aria-label="AI Assistant" hidden>
+        <div class="panel-header">
+          <h2>Riddle Companion</h2>
+          <p class="panel-sub">Hints and practice for the current riddle. Keys stay on the server. No fake answers.</p>
+        </div>
+        <div class="ai-status glass" id="ai-status-card">
+          <div class="ai-plan-row">
+            <span id="ai-plan-label">Plan: Free</span>
+            <span id="ai-usage-label">0 / 20 today</span>
+          </div>
+          <p class="ai-status-note" id="ai-status-note">If AI is not configured on the server, you will see a setup message — not a made-up hint.</p>
+        </div>
+        <div class="ai-actions">
+          <button type="button" class="btn-secondary ai-action-btn" id="btn-ai-hint">Give Me a Hint</button>
+          <button type="button" class="btn-secondary ai-action-btn" id="btn-ai-explain">Explain This Riddle</button>
+          <button type="button" class="btn-secondary ai-action-btn" id="btn-ai-similar">Give Me a Similar Challenge</button>
+          <button type="button" class="btn-secondary ai-action-btn" id="btn-ai-practice">Help Me Practice</button>
+          <button type="button" class="btn-secondary ai-action-btn" id="btn-ai-analyze">Analyze My Performance</button>
+          <button type="button" class="btn-secondary ai-action-btn" id="btn-ai-recommend">Recommend a category</button>
+          <button type="button" class="btn-secondary ai-action-btn" id="btn-ai-challenge">Personalized challenge</button>
+          <button type="button" class="btn-primary" id="btn-ai-upgrade">Upgrade to Pro</button>
+        </div>
+        <div class="ai-output glass" id="ai-output" aria-live="polite">
+          <p class="ai-output-placeholder">AI responses appear here.</p>
+        </div>
+      </section>
+
+      <!-- FREE VS PRO -->
+      <section id="screen-plans" class="screen-panel" aria-label="Plans" hidden>
+        <div class="panel-header">
+          <h2>Free &amp; Pro</h2>
+          <p class="panel-sub">The free game stays fully playable. Pro adds extras.</p>
+        </div>
+        <div class="plans-grid">
+          <div class="plan-card glass">
+            <h3>Free</h3>
+            <ul class="plan-list">
+              <li>✓ Core riddles &amp; modes</li>
+              <li>✓ Daily Challenge</li>
+              <li>✓ Basic hints (coins)</li>
+              <li>✓ Basic AI hints &amp; explanations</li>
+              <li>✓ 20 Free AI requests / day (resets daily)</li>
+              <li>✓ Achievements &amp; missions</li>
+              <li>✓ Coin cosmetics (Free shop items)</li>
+            </ul>
+          </div>
+          <div class="plan-card glass plan-card-pro">
+            <h3>Pro</h3>
+            <ul class="plan-list">
+              <li>✓ Everything in Free</li>
+              <li>✓ Higher daily AI allowance</li>
+              <li>✓ Advanced AI hints</li>
+              <li>✓ Practice riddles</li>
+              <li>✓ Personalized challenges</li>
+              <li>✓ Pro themes, avatars &amp; packs</li>
+              <li>✓ Advanced stats path</li>
+            </ul>
+            <button type="button" class="btn-primary" id="btn-plans-upgrade">View Pro</button>
+          </div>
+        </div>
+        <p class="plans-footnote">Display prices only. Secure payment is not connected yet. Demo Pro in Settings is DEVELOPMENT ONLY.</p>
+        <button type="button" class="btn-secondary" id="btn-plans-compare-ai" style="width:100%;margin-top:8px">Open AI Assistant</button>
+      </section>
+
+      <!-- PRO DASHBOARD / UPGRADE (Phase 19) -->
+      <section id="screen-premium" class="screen-panel" aria-label="Pro Dashboard" hidden>
+        <div class="panel-header">
+          <h2>Pro Dashboard</h2>
+          <p class="panel-sub" id="pro-dash-sub">Your plan, benefits, and upgrade options.</p>
+        </div>
+
+        <div class="pro-status glass" id="pro-status-card">
+          <div class="pro-status-top">
+            <span class="pro-status-badge" id="pro-status-badge">Free</span>
+            <span class="pro-status-detail" id="pro-status-detail">Standard access</span>
+          </div>
+          <div class="pro-usage-row">
+            <span>AI usage today</span>
+            <strong id="pro-ai-usage">0 / 20</strong>
+          </div>
+          <p class="pro-status-note" id="pro-status-note"></p>
+        </div>
+
+        <div class="pro-section glass">
+          <h3 class="pro-section-title">Benefits</h3>
+          <ul class="premium-perks" id="pro-benefits-list">
+            <li>Higher daily AI limits</li>
+            <li>Advanced AI hints &amp; practice</li>
+            <li>Personalized challenges</li>
+            <li>Pro themes, avatars &amp; hint packs</li>
+            <li>Cosmetics only — never pay-to-win</li>
+          </ul>
+        </div>
+
+        <div class="pro-section glass">
+          <h3 class="pro-section-title">Premium cosmetics</h3>
+          <p class="pro-section-body" id="pro-cosmetics-note">Browse Pro items in the Shop (tier toggle). Unlock requires Pro.</p>
+          <button type="button" class="btn-secondary" id="btn-pro-open-shop">Open Shop</button>
+        </div>
+
+        <div class="pro-section glass">
+          <h3 class="pro-section-title">Pricing</h3>
+          <div class="premium-price" id="premium-price">$4.99/month</div>
+          <p class="premium-note" id="premium-note">Base: $4.99/month · $49.99/year. Regional display where configured. Billing not connected.</p>
+          <button type="button" class="btn-primary" id="btn-premium-checkout">Pro Coming Soon</button>
+          <button type="button" class="btn-secondary" id="btn-premium-restore">Restore access</button>
+          <button type="button" class="btn-secondary" id="btn-premium-back">Back</button>
+        </div>
+
+        <div class="pro-section glass" id="pro-faq">
+          <h3 class="pro-section-title">FAQ</h3>
+          <details class="pro-faq-item">
+            <summary>Is the free game complete?</summary>
+            <p>Yes. Core modes, daily challenge, progression, and basic AI stay available on Free.</p>
+          </details>
+          <details class="pro-faq-item">
+            <summary>What does Pro add?</summary>
+            <p>Higher AI limits, advanced AI tools, practice helpers, and Pro cosmetics. No gameplay power paywall.</p>
+          </details>
+          <details class="pro-faq-item">
+            <summary>Can I pay now?</summary>
+            <p>Not yet. Checkout is prepared for a future payment provider. No cards are collected in this version.</p>
+          </details>
+          <details class="pro-faq-item">
+            <summary>What is Demo Pro Mode?</summary>
+            <p>A Settings switch for developers to test Pro features. It is not a purchase and must stay off in production.</p>
+          </details>
+          <details class="pro-faq-item">
+            <summary>How do I restore Pro later?</summary>
+            <p>Restore will use your account + payment provider verification once accounts and billing exist.</p>
+          </details>
+        </div>
+      </section>
+
+      <!-- SETTINGS -->
+      <section id="screen-settings" class="screen-panel" aria-label="Settings" hidden>
+        <div class="panel-header">
+          <h2>Settings</h2>
+          <p class="panel-sub">Customize your experience.</p>
+        </div>
+        <div class="settings-list glass">
+          <div class="setting-row">
+            <div class="setting-info">
+              <span class="setting-title">Theme</span>
+              <span class="setting-desc">Light or Dark appearance</span>
+            </div>
+            <button id="settings-theme-toggle" class="toggle-btn" aria-label="Toggle theme">Dark</button>
+          </div>
+          <div class="setting-row">
+            <div class="setting-info">
+              <span class="setting-title">Sound Effects</span>
+              <span class="setting-desc">Button & feedback sounds</span>
+            </div>
+            <label class="switch">
+              <input type="checkbox" id="toggle-sfx" checked aria-label="Toggle sound effects" />
+              <span class="slider"></span>
+            </label>
+          </div>
+          <div class="setting-row">
+            <div class="setting-info">
+              <span class="setting-title">Music</span>
+              <span class="setting-desc">Background music during games</span>
+            </div>
+            <label class="switch">
+              <input type="checkbox" id="toggle-music" checked aria-label="Toggle music" />
+              <span class="slider"></span>
+            </label>
+          </div>
+          <div class="setting-row">
+            <div class="setting-info">
+              <span class="setting-title">Haptic Feedback</span>
+              <span class="setting-desc">Vibration on mobile (when available)</span>
+            </div>
+            <label class="switch">
+              <input type="checkbox" id="toggle-haptic" checked aria-label="Toggle haptic feedback" />
+              <span class="slider"></span>
+            </label>
+          </div>
+          <div class="setting-row">
+            <div class="setting-info">
+              <span class="setting-title">Text Size</span>
+              <span class="setting-desc">Make reading easier</span>
+            </div>
+            <div class="segmented" role="group" aria-label="Text size">
+              <button type="button" class="seg-btn" data-text-size="small" aria-label="Small text">A</button>
+              <button type="button" class="seg-btn active" data-text-size="medium" aria-label="Medium text">A</button>
+              <button type="button" class="seg-btn" data-text-size="large" aria-label="Large text">A</button>
+            </div>
+          </div>
+          <div class="setting-row">
+            <div class="setting-info">
+              <span class="setting-title">Reduced Motion</span>
+              <span class="setting-desc">Minimize animations</span>
+            </div>
+            <label class="switch">
+              <input type="checkbox" id="toggle-motion" aria-label="Toggle reduced motion" />
+              <span class="slider"></span>
+            </label>
+          </div>
+          <div class="setting-row">
+            <div class="setting-info">
+              <span class="setting-title">High Contrast</span>
+              <span class="setting-desc">Stronger borders and text</span>
+            </div>
+            <label class="switch">
+              <input type="checkbox" id="toggle-contrast" aria-label="Toggle high contrast" />
+              <span class="slider"></span>
+            </label>
+          </div>
+        </div>
+        <div class="setting-row glass" style="margin-top:12px">
+            <div class="setting-info">
+              <span class="setting-title">Marketing analytics</span>
+              <span class="setting-desc">Optional Meta Pixel for ads measurement. Off until you allow it.</span>
+            </div>
+            <label class="switch">
+              <input type="checkbox" id="toggle-marketing" aria-label="Allow marketing analytics" />
+              <span class="slider"></span>
+            </label>
+          </div>
+          <div class="setting-row glass setting-row-danger">
+            <div class="setting-info">
+              <span class="setting-title">Demo Pro Mode</span>
+              <span class="setting-desc">DEVELOPMENT ONLY — tests Pro features. Not a real payment.</span>
+            </div>
+            <label class="switch">
+              <input type="checkbox" id="toggle-demo-pro" aria-label="Demo Pro Mode development only" />
+              <span class="slider"></span>
+            </label>
+          </div>
+        <div class="settings-danger glass">
+          <p class="settings-danger-title">Data</p>
+          <button type="button" class="btn-secondary" id="btn-reset-progress">Reset progress</button>
+          <p class="settings-danger-note">Clears XP, coins, streaks, and scores on this device.</p>
+        </div>
+        <div class="settings-footer">
+          <p class="settings-keys">Keyboard: 1–4 choose answers · Esc go back</p>
+          <p class="version">Game Arena v2.9.0 — Phase 1 platform foundation</p>
+        </div>
+      </section>
+    </main>
+
+    <!-- Bottom Navigation (mobile) -->
+    <nav class="bottom-nav" role="navigation" aria-label="Main navigation">
+      <button class="bottom-nav-item active" data-screen="arena" aria-label="Arena" aria-current="page">
+        <span class="bn-icon">🏟️</span>
+        <span class="bn-label">Arena</span>
+      </button>
+      <button class="bottom-nav-item" data-screen="home" aria-label="Riddles">
+        <span class="bn-icon">🧩</span>
+        <span class="bn-label">Riddles</span>
+      </button>
+      <button class="bottom-nav-item" data-screen="categories" aria-label="Categories">
+        <span class="bn-icon">📂</span>
+        <span class="bn-label">Categories</span>
+      </button>
+      <button class="bottom-nav-item" data-screen="daily" aria-label="Daily">
+        <span class="bn-icon">📅</span>
+        <span class="bn-label">Daily</span>
+      </button>
+      <button class="bottom-nav-item" data-screen="shop" aria-label="Shop">
+        <span class="bn-icon">🛒</span>
+        <span class="bn-label">Shop</span>
+      </button>
+      <button class="bottom-nav-item" data-screen="profile" aria-label="Profile">
+        <span class="bn-icon">👤</span>
+        <span class="bn-label">Profile</span>
+      </button>
+    </nav>
+  </div>
+
+  <!-- Optional marketing consent (Meta Pixel stays off until allowed) -->
+  <div id="marketing-consent-banner" class="consent-banner glass" hidden>
+    <p>We use optional analytics to measure ads. Gameplay data stays on your device. <button type="button" id="btn-consent-accept" class="btn-primary">Allow</button> <button type="button" id="btn-consent-decline" class="btn-secondary">No thanks</button></p>
+  </div>
+
+  
+  <!-- Phase 22: Pro Upgrade Modal (reusable) -->
+  <div id="pro-modal" class="modal-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="pro-modal-title" hidden>
+    <div class="modal-card glass">
+      <h3 id="pro-modal-title">⭐ PRO</h3>
+      <p id="pro-modal-body">Unlock this feature with Pro.</p>
+      <div class="pro-price-block">
+        <div class="premium-price" id="pro-modal-monthly">$4.99/month</div>
+        <div class="pro-yearly" id="pro-modal-yearly">$49.99/year</div>
+        <p class="pro-yearly-note" id="pro-modal-yearly-note">Better value with yearly</p>
+      </div>
+      <ul class="premium-perks" style="text-align:left;margin:12px 0">
+        <li>✓ Premium themes &amp; avatars</li>
+        <li>✓ Premium hint packs</li>
+        <li>✓ Higher AI access</li>
+        <li>✓ Advanced AI features</li>
+        <li>✓ Exclusive content</li>
+      </ul>
+      <p class="premium-note" id="pro-modal-note">Your local currency may be displayed where supported. Secure payment is not available yet. Payment will be connected in a future phase.</p>
+      <button type="button" class="btn-primary" id="pro-modal-upgrade">Upgrade to Pro</button>
+      <button type="button" class="btn-secondary" id="pro-modal-later">Close</button>
+    </div>
+  </div>
+
+  <!-- Phase 22: Coin purchase confirm -->
+  <div id="buy-modal" class="modal-overlay hidden" role="dialog" aria-modal="true" hidden>
+    <div class="modal-card glass">
+      <h3 id="buy-modal-title">Unlock item?</h3>
+      <p id="buy-modal-body"></p>
+      <button type="button" class="btn-primary" id="buy-modal-confirm">Confirm</button>
+      <button type="button" class="btn-secondary" id="buy-modal-cancel">Cancel</button>
+    </div>
+  </div>
+
+  <div id="toast-root" class="toast-root" aria-live="polite" aria-relevant="additions"></div>
+
+  <script src="data/riddles-data.js"></script>
+  <script src="js/storage.js"></script>
+  <script src="js/arena.js"></script>
+  <script src="js/minigames.js"></script>
+  <script src="js/riddles.js"></script>
+  <script src="js/game.js"></script>
+  <script src="js/daily.js"></script>
+  <script src="js/streaks.js"></script>
+  <script src="js/hints.js"></script>
+  <script src="js/achievements.js"></script>
+  <script src="js/missions.js"></script>
+  <script src="js/shop.js"></script>
+  <script src="js/leaderboard.js"></script>
+  <script src="js/analytics.js"></script>
+  <script src="js/meta-pixel.js"></script>
+  <script src="js/entitlements.js"></script>
+  <script src="js/pricing.js"></script>
+  <script src="js/monetization.js"></script>
+  <script src="js/ai-service.js"></script>
+  <script src="js/share.js"></script>
+  <script src="js/audio.js"></script>
+  <script src="js/api.js"></script>
+  <script src="js/auth.js"></script>
+  <script src="js/multiplayer.js"></script>
+  <script src="js/battle.js"></script>
+  <script src="js/challenge.js"></script>
+  <script src="js/ui.js"></script>
+  <script src="script.js"></script>
+</body>
+</html>

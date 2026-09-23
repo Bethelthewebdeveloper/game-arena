@@ -1,0 +1,6 @@
+User-agent: *
+Allow: /
+Disallow: /founder.html
+Disallow: /api/founder
+
+Sitemap: https://riddlerealm.app/sitemap.xml

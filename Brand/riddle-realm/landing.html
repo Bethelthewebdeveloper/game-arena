@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Game Arena — Play. Compete. Level Up.</title>
+  <meta name="description" content="Challenge yourself across fast games, earn XP, unlock achievements, and compete on real leaderboards." />
+  <script>tailwind = { config: { corePlugins: { preflight: false } } };</script>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="style.css" />
+  <style>
+    .land { max-width: 980px; margin: 0 auto; padding: 20px 16px 48px; }
+    .land-hero { text-align: center; padding: 28px 0 18px; }
+    .land-grid { display: grid; gap: 12px; }
+    @media (min-width: 720px) { .land-grid.games { grid-template-columns: 1fr 1fr; } .land-grid.steps { grid-template-columns: 1fr 1fr 1fr; } }
+    .auth-box input { width: 100%; margin-bottom: 8px; padding: 10px 12px; border-radius: 10px; border: 1px solid var(--border-glass); background: var(--bg-glass); color: var(--text-primary); }
+  </style>
+</head>
+<body>
+  <header class="top-bar" style="position:sticky;top:0;z-index:20">
+    <div class="brand"><span class="brand-mark">GA</span><span class="brand-text">Game Arena</span></div>
+    <div>
+      <button type="button" class="btn-secondary" id="btn-open-login">Log in</button>
+      <button type="button" class="btn-primary" id="btn-play-now">Play Now</button>
+    </div>
+  </header>
+
+  <main class="land">
+    <section class="land-hero">
+      <p class="text-xs font-semibold tracking-[0.2em] uppercase text-violet-300">Game Arena</p>
+      <h1 class="text-4xl font-extrabold mt-2">Play. Compete. Level Up.</h1>
+      <p class="mt-3 text-[var(--text-secondary)] max-w-xl mx-auto">Challenge yourself across fast, fun games, earn XP, unlock achievements and compete on leaderboards.</p>
+      <div class="mt-5 flex flex-col sm:flex-row gap-3 justify-center">
+        <button type="button" class="btn-primary" id="btn-hero-play">Play Now</button>
+        <a class="btn-secondary" href="#games" id="btn-explore">Explore Games</a>
+      </div>
+    </section>
+
+    <section id="games" class="mt-8">
+      <h2>Games</h2>
+      <div class="land-grid games" id="game-cards"></div>
+    </section>
+
+    <section class="mt-8">
+      <h2>How Game Arena Works</h2>
+      <div class="land-grid steps">
+        <div class="glass kpi"><span class="kpi-label">1</span><span class="kpi-value">Create account</span></div>
+        <div class="glass kpi"><span class="kpi-label">2</span><span class="kpi-value">Choose a game</span></div>
+        <div class="glass kpi"><span class="kpi-label">3</span><span class="kpi-value">Play</span></div>
+        <div class="glass kpi"><span class="kpi-label">4</span><span class="kpi-value">Earn rewards</span></div>
+        <div class="glass kpi"><span class="kpi-label">5</span><span class="kpi-value">Level up</span></div>
+        <div class="glass kpi"><span class="kpi-label">6</span><span class="kpi-value">Compete</span></div>
+      </div>
+    </section>
+
+    <section class="mt-8">
+      <h2>Progression</h2>
+      <p class="panel-sub">XP, levels, coins, achievements, streaks, stats, and leaderboards come from real play. New accounts start empty.</p>
+    </section>
+
+    <section class="mt-8">
+      <h2>Features</h2>
+      <ul class="plan-list">
+        <li>🎮 Multiple games in one arena</li>
+        <li>🏆 Achievements from real results</li>
+        <li>⭐ Shared XP and levels</li>
+        <li>🪙 Coins from gameplay only</li>
+        <li>🔥 Activity streaks</li>
+        <li>🏅 Leaderboards with real scores</li>
+        <li>🤖 Riddle Companion (server-side AI keys)</li>
+      </ul>
+    </section>
+
+    <section class="mt-8 plans-grid">
+      <div class="plan-card glass"><h3>Free</h3><p>Play all seven games. Core rewards included.</p></div>
+      <div class="plan-card glass plan-card-pro"><h3>Pro</h3><p>Advanced extras. Pro payments are not configured yet.</p></div>
+    </section>
+
+    <section class="mt-8 text-center">
+      <h2>Ready?</h2>
+      <button type="button" class="btn-primary" id="btn-cta">Create your player account</button>
+    </section>
+
+    <footer class="mt-10 text-center text-xs text-[var(--text-muted)]">Game Arena · Owner tools stay private · No fake players</footer>
+  </main>
+
+  <div id="auth-modal" class="modal-overlay hidden" hidden>
+    <div class="modal-card glass auth-box">
+      <h3 id="auth-title">Create account</h3>
+      <p class="f-note" id="auth-note">Player accounts only. Owner access is not available here.</p>
+      <input id="auth-name" placeholder="Display name" />
+      <input id="auth-user" placeholder="Username" autocomplete="username" />
+      <input id="auth-email" type="email" placeholder="Email" autocomplete="email" />
+      <input id="auth-pass" type="password" placeholder="Password (8+ characters)" autocomplete="new-password" />
+      <p class="f-msg" id="auth-msg"></p>
+      <button type="button" class="btn-primary" id="auth-submit">Create account</button>
+      <button type="button" class="btn-secondary" id="auth-toggle">I already have an account</button>
+      <button type="button" class="btn-secondary" id="auth-close">Close</button>
+    </div>
+  </div>
+
+  <script src="js/api.js"></script>
+  <script src="js/auth.js"></script>
+  <script>
+  (function () {
+    var games = [
+      { id: 'riddle', emoji: '🧩', title: 'Riddle Game', blurb: 'Challenge your brain with clever riddles.', diff: 'All levels' },
+      { id: 'reflex', emoji: '⚡', title: 'Reflex Challenge', blurb: 'Test how quickly you can react.', diff: 'Easy–Expert' },
+      { id: 'memory', emoji: '🧠', title: 'Memory Challenge', blurb: 'Match pairs and beat your best.', diff: 'Easy–Expert' },
+      { id: 'penalty', emoji: '⚽', title: 'Penalty Shootout', blurb: 'Take your shots and beat the keeper.', diff: 'Easy–Expert' },
+      { id: 'rps', emoji: '✊', title: 'Rock Paper Scissors', blurb: 'Build a winning streak.', diff: 'Easy–Expert' },
+      { id: 'wordclash', emoji: '🔤', title: 'Word Clash', blurb: 'Vocabulary, speed, and word skill.', diff: 'Easy–Expert' },
+      { id: 'trivia', emoji: '🎯', title: 'Trivia Rush', blurb: 'Answer quickly and chase a high score.', diff: 'Easy–Expert' }
+    ];
+    var box = document.getElementById('game-cards');
+    box.innerHTML = games.map(function (g) {
+      return '<div class="action-card"><div class="action-icon">' + g.emoji + '</div><div class="action-content"><span class="action-title">' + g.title + '</span><span class="action-sub">' + g.blurb + ' · ' + g.diff + '</span></div><button type="button" class="action-badge" data-play="' + g.id + '">Play</button></div>';
+    }).join('');
+
+    var mode = 'register';
+    function loggedIn() { return typeof Auth !== 'undefined' && Auth.isLoggedIn && Auth.isLoggedIn(); }
+    function goPlay(gameId, fresh) {
+      var parts = [];
+      if (gameId) parts.push('game=' + encodeURIComponent(gameId));
+      if (fresh) parts.push('fresh=1');
+      window.location.href = '/play' + (parts.length ? '?' + parts.join('&') : '');
+    }
+    function openAuth(nextGame) {
+      if (loggedIn()) return goPlay(nextGame);
+      window.__nextGame = nextGame || '';
+      document.getElementById('auth-modal').hidden = false;
+      document.getElementById('auth-modal').classList.remove('hidden');
+    }
+    function closeAuth() {
+      document.getElementById('auth-modal').hidden = true;
+      document.getElementById('auth-modal').classList.add('hidden');
+    }
+    document.getElementById('btn-play-now').onclick = function () { openAuth(''); };
+    document.getElementById('btn-hero-play').onclick = function () { openAuth(''); };
+    document.getElementById('btn-cta').onclick = function () { openAuth(''); };
+    document.getElementById('btn-open-login').onclick = function () {
+      mode = 'login';
+      document.getElementById('auth-title').textContent = 'Log in';
+      document.getElementById('auth-name').hidden = true;
+      document.getElementById('auth-email').hidden = true;
+      openAuth('');
+    };
+    document.getElementById('auth-close').onclick = closeAuth;
+    document.getElementById('auth-toggle').onclick = function () {
+      mode = mode === 'register' ? 'login' : 'register';
+      document.getElementById('auth-title').textContent = mode === 'register' ? 'Create account' : 'Log in';
+      document.getElementById('auth-name').hidden = mode === 'login';
+      document.getElementById('auth-email').hidden = mode === 'login';
+      document.getElementById('auth-toggle').textContent = mode === 'register' ? 'I already have an account' : 'Create an account';
+    };
+    document.getElementById('game-cards').addEventListener('click', function (e) {
+      var b = e.target.closest('[data-play]');
+      if (b) openAuth(b.getAttribute('data-play'));
+    });
+    document.getElementById('auth-submit').onclick = async function () {
+      var msg = document.getElementById('auth-msg');
+      msg.textContent = 'Working…';
+      var res;
+      if (mode === 'register') {
+        res = await Auth.register({
+          displayName: document.getElementById('auth-name').value,
+          username: document.getElementById('auth-user').value,
+          email: document.getElementById('auth-email').value,
+          password: document.getElementById('auth-pass').value,
+          role: 'player'
+        });
+      } else {
+        res = await Auth.login({
+          username: document.getElementById('auth-user').value,
+          password: document.getElementById('auth-pass').value
+        });
+      }
+      if (!res.ok) {
+        msg.className = 'f-msg err';
+        msg.textContent = res.error || 'Could not authenticate';
+        return;
+      }
+      goPlay(window.__nextGame || '', mode === 'register');
+    };
+  })();
+  </script>
+</body>
+</html>
