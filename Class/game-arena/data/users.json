@@ -1,0 +1,100 @@
+[
+  {
+    "id": "u_mucta2ya7862ef",
+    "username": "phase5ok",
+    "passwordHash": "0bf8a6a4cddcfff8f7cd4c4a86813144:08f282f6f4f76261306fba46db43bd3b178df7b13c478b5470328f38e36a5e37",
+    "createdAt": "2026-09-22T15:10:53.661Z",
+    "xp": 81,
+    "coins": 27,
+    "achievements": [
+      "race-first",
+      "race-speed"
+    ],
+    "streaks": {
+      "global": {
+        "count": 1,
+        "last": "2026-09-22"
+      }
+    },
+    "stats": {
+      "minirace": {
+        "plays": 2,
+        "best": 2000,
+        "completions": 2,
+        "stage": 9,
+        "lastMode": "time-trial",
+        "bestTime": 18.42,
+        "racesPlayed": 2
+      },
+      "riddle": {
+        "plays": 1,
+        "best": 30,
+        "completions": 0,
+        "stage": 1
+      }
+    },
+    "plan": "free"
+  },
+  {
+    "id": "u_mue5ekps08e77c",
+    "username": "auditfix",
+    "passwordHash": "7b9a30713f886aa06aa0aec5d798e2c2:eede5735803252e8f2e65cb0c7265131649b4cab5a9ad6ef7486287566ae0598",
+    "createdAt": "2026-09-23T13:38:04.878Z",
+    "xp": 18,
+    "coins": 5,
+    "achievements": [
+      "number-first"
+    ],
+    "streaks": {
+      "global": {
+        "count": 1,
+        "last": "2026-09-23"
+      }
+    },
+    "stats": {
+      "numberrush": {
+        "plays": 1,
+        "best": 400,
+        "completions": 1,
+        "stage": 3
+      }
+    },
+    "plan": "free"
+  },
+  {
+    "id": "u_mue5owtva95938",
+    "username": "Kit",
+    "passwordHash": "f338c46f58fa3d9e1c2cf54b2a575014:e955106a67b64f7f6684afedeeb291fc73bb9fa50ded47d1ec8360154267e860",
+    "createdAt": "2026-09-23T13:46:07.118Z",
+    "xp": 0,
+    "coins": 0,
+    "achievements": [],
+    "streaks": {},
+    "stats": {},
+    "plan": "free"
+  },
+  {
+    "id": "u_mue7cyn4b9e2f9",
+    "username": "VercelUser",
+    "passwordHash": "cea2e97cfc27abdf147f18001f351d38:4e46bb75fef1b00dec09ede21429c0642c5af1017629440c873051ed3254e40c",
+    "createdAt": "2026-09-23T14:32:48.842Z",
+    "xp": 8,
+    "coins": 2,
+    "achievements": [],
+    "streaks": {
+      "global": {
+        "count": 1,
+        "last": "2026-09-23"
+      }
+    },
+    "stats": {
+      "riddle": {
+        "plays": 1,
+        "best": 20,
+        "completions": 1,
+        "stage": 1
+      }
+    },
+    "plan": "free"
+  }
+]

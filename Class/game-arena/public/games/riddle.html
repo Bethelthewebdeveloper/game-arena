@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Riddle Game — Game Arena</title>
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700&family=Outfit:wght@400;600&display=swap" rel="stylesheet" />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>tailwind.config={theme:{extend:{fontFamily:{display:['Orbitron','sans-serif'],sans:['Outfit','system-ui','sans-serif']}}}}</script>
+</head>
+<body class="min-h-screen bg-[#0c0a12] font-sans text-slate-200">
+  <main class="mx-auto max-w-xl px-4 py-10">
+    <p class="text-xs uppercase tracking-widest text-amber-300">Game Arena · Riddle Game</p>
+    <h1 class="mt-2 text-2xl font-semibold text-white">Solve the riddle</h1>
+    <p id="timer" class="mt-2 text-sm text-slate-400">Time left: 45s</p>
+    <p id="prompt" class="mt-6 text-lg text-white"></p>
+    <form id="form" class="mt-6 flex gap-2">
+      <input id="answer" class="flex-1 rounded-xl border border-white/10 bg-white/5 px-3 py-2 outline-none ring-amber-300 focus:ring-2" autocomplete="off" aria-label="Your answer" />
+      <button class="rounded-xl bg-amber-400 px-4 py-2 font-semibold text-slate-950">Submit</button>
+    </form>
+    <p id="status" class="mt-3 text-sm text-slate-400"></p>
+    <aside class="mt-8 rounded-2xl border border-amber-300/20 bg-amber-400/5 p-4">
+      <h2 class="text-sm font-semibold text-amber-200">AI companion</h2>
+      <p class="mt-1 text-xs text-slate-400">Available only inside this game. Hints explain the puzzle without giving the full answer until you ask.</p>
+      <div class="mt-3 flex flex-wrap gap-2">
+        <button type="button" id="hint-btn" class="rounded-lg border border-amber-300/30 px-3 py-1.5 text-sm">Hint</button>
+        <button type="button" id="explain-btn" class="rounded-lg border border-amber-300/30 px-3 py-1.5 text-sm">Explain</button>
+        <button type="button" id="similar-btn" class="rounded-lg border border-amber-300/30 px-3 py-1.5 text-sm">Similar challenge</button>
+      </div>
+      <p id="ai" class="mt-3 text-sm text-amber-100/90"></p>
+    </aside>
+  </main>
+  <script src="/js/arena.js"></script>
+  <script src="/js/game-shell.js"></script>
+  <script>
+    const RIDDLES = [
+      { q: "I have keys but no locks. I have space but no room. You can enter, but you cannot go outside. What am I?", a: "keyboard", hint: "Think about something you type on.", explain: "A keyboard has keys, a space bar, and an enter key.", similar: "I speak without a mouth and hear without ears." },
+      { q: "What has to be broken before you can use it?", a: "egg", hint: "Breakfast often starts with it.", explain: "An egg must be cracked before it is used.", similar: "The more of me you take, the more you leave behind." },
+      { q: "What can travel around the world while staying in a corner?", a: "stamp", hint: "It lives on an envelope.", explain: "A postage stamp stays in the corner of a letter as the letter travels.", similar: "I have cities but no houses." },
+    ];
+    let i = 0, score = 0, left = 45, done = false;
+    const r = () => RIDDLES[i % RIDDLES.length];
+    document.getElementById("prompt").textContent = r().q;
+    GameShell.mountChrome("RIDDLE GAME");
+    GameShell.guard();
+    const tick = setInterval(() => {
+      if (done) return;
+      left -= 1;
+      document.getElementById("timer").textContent = "Time left: " + left + "s";
+      if (left <= 0) finish();
+    }, 1000);
+    window.__gaCleanup = () => clearInterval(tick);
+    document.getElementById("form").addEventListener("submit", (e) => {
+      e.preventDefault();
+      const val = document.getElementById("answer").value.trim().toLowerCase();
+      if (val === r().a) {
+        score += 10;
+        i += 1;
+        document.getElementById("answer").value = "";
+        document.getElementById("prompt").textContent = r().q;
+        document.getElementById("status").textContent = "Correct. Next riddle.";
+        document.getElementById("ai").textContent = "";
+      } else {
+        document.getElementById("status").textContent = "Not quite. Try again or use a hint.";
+      }
+    });
+    document.getElementById("hint-btn").onclick = () => { document.getElementById("ai").textContent = r().hint; };
+    document.getElementById("explain-btn").onclick = () => { document.getElementById("ai").textContent = r().explain; };
+    document.getElementById("similar-btn").onclick = () => { document.getElementById("ai").textContent = "Practice this: " + r().similar; };
+    async function finish() {
+      if (done) return;
+      done = true;
+      clearInterval(tick);
+      document.getElementById("status").textContent = "Time up. Score: " + score;
+      await GameShell.submitRun("riddle", score, Math.min(40, score), Math.min(10, Math.floor(score / 10)));
+    }
+  </script>
+</body>
+</html>

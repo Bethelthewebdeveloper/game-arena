@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Arena — Game Arena</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700&family=Outfit:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>tailwind.config={theme:{extend:{fontFamily:{display:['Orbitron','sans-serif'],sans:['Outfit','system-ui','sans-serif']}}}}</script>
+</head>
+<body class="min-h-screen bg-[#070b16] font-sans text-slate-200 antialiased">
+  <header class="border-b border-white/10">
+    <div class="mx-auto flex max-w-6xl items-center justify-between px-4 py-3">
+      <a href="/" class="inline-flex items-center gap-2">
+        <span class="grid h-9 w-9 place-items-center rounded-xl bg-gradient-to-br from-cyan-400 to-violet-500 text-slate-950">▲</span>
+        <span class="font-display text-sm font-bold tracking-wider text-white">GAME ARENA</span>
+      </a>
+      <div class="flex items-center gap-3 text-sm">
+        <span data-username class="text-white"></span>
+        <span data-user-level class="rounded-full border border-cyan-400/30 px-2 py-0.5 text-xs text-cyan-200"></span>
+        <button id="logout" class="rounded-lg border border-white/10 px-3 py-1.5 hover:bg-white/5">Log out</button>
+      </div>
+    </div>
+  </header>
+  <main class="mx-auto max-w-6xl px-4 py-10">
+    <h1 class="font-display text-3xl font-bold text-white">YOUR ARENA</h1>
+    <p class="mt-2 text-slate-400">Pick a game and keep building your shared progression.</p>
+    <section class="mt-8 grid gap-4 sm:grid-cols-3">
+      <div class="rounded-2xl border border-white/10 p-4">
+        <p class="text-xs uppercase tracking-wide text-slate-400">Level</p>
+        <p id="stat-level" class="mt-1 text-2xl font-semibold text-white">—</p>
+      </div>
+      <div class="rounded-2xl border border-white/10 p-4">
+        <p class="text-xs uppercase tracking-wide text-slate-400">XP</p>
+        <p id="stat-xp" class="mt-1 text-2xl font-semibold text-white">—</p>
+        <div class="mt-2 h-1.5 overflow-hidden rounded-full bg-white/10">
+          <div id="xp-bar" class="h-full w-0 bg-gradient-to-r from-cyan-400 to-violet-500"></div>
+        </div>
+      </div>
+      <div class="rounded-2xl border border-white/10 p-4">
+        <p class="text-xs uppercase tracking-wide text-slate-400">Coins</p>
+        <p id="stat-coins" class="mt-1 text-2xl font-semibold text-white">—</p>
+      </div>
+    </section>
+    <section class="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-3" id="games"></section>
+  </main>
+  <script src="/js/arena.js"></script>
+  <script>
+    const cards = [
+      ["riddle", "🧩", "Riddle Game", "Solve timed riddles."],
+      ["reflex", "⚡", "Reflex Challenge", "Hit targets as they appear."],
+      ["memory", "🧠", "Memory Challenge", "Match pairs under pressure."],
+      ["penalty", "⚽", "Penalty Shootout", "Beat the keeper."],
+      ["rps", "✊", "Rock Paper Scissors", "Win the series."],
+      ["wordclash", "🔤", "Word Clash", "Unscramble before time ends."],
+      ["trivia", "❓", "Trivia Rush", "Answer and keep the streak."],
+      ["minirace", "🏎️", "Mini Race", "Steer, dodge and finish the track."],
+      ["targetstrike", "🎯", "Target Strike", "Hit moving targets under time."],
+      ["patternmaster", "🧩", "Pattern Master", "Watch the pattern, then rebuild it."],
+      ["numberrush", "🔢", "Number Rush", "Solve number challenges against the clock."],
+      ["codebreaker", "🔐", "Code Breaker", "Crack the hidden code with clues."],
+    ];
+
+    Arena.getMe().then((user) => {
+      if (!user) {
+        location.replace("/login?next=/dashboard");
+        return;
+      }
+      document.querySelector("[data-username]").textContent = user.username;
+      document.querySelector("[data-user-level]").textContent = "Lv " + user.level;
+      document.getElementById("stat-level").textContent = user.level;
+      document.getElementById("stat-xp").textContent = (user.xp || 0) + " (" + user.xpIntoLevel + "/100)";
+      document.getElementById("xp-bar").style.width = user.xpIntoLevel + "%";
+      document.getElementById("stat-coins").textContent = user.coins || 0;
+      const stats = user.stats || {};
+      document.getElementById("games").innerHTML = cards.map(([id, icon, name, desc]) => {
+        const st = stats[id] || {};
+        const stage = st.stage || 1;
+        const best = st.best == null ? "—" : st.best;
+        const extra = st.bestTime != null ? " · Best time " + Number(st.bestTime).toFixed(2) + "s" : "";
+        return `
+      <article class="rounded-2xl border border-white/10 bg-white/[0.03] p-5">
+        <div class="text-2xl">${icon}</div>
+        <h2 class="mt-3 font-semibold text-white">${name}</h2>
+        <p class="mt-1 text-sm text-slate-400">${desc}</p>
+        <p class="mt-2 text-xs text-slate-500">Stage ${stage} · Best ${best}${extra}</p>
+        <a class="mt-4 inline-block rounded-lg bg-cyan-400/15 px-3 py-2 text-sm font-semibold text-cyan-100 hover:bg-cyan-400/25" href="${Arena.GAMES[id].path}">Play</a>
+      </article>`;
+      }).join("");
+    });
+    document.getElementById("logout").addEventListener("click", async () => {
+      await fetch("/api/logout", { method: "POST" });
+      location.href = "/";
+    });
+  </script>
+</body>
+</html>
