@@ -1,0 +1,94 @@
+[
+  {
+    "id": "u_mucta2ya7862ef",
+    "username": "phase5ok",
+    "passwordHash": "0bf8a6a4cddcfff8f7cd4c4a86813144:08f282f6f4f76261306fba46db43bd3b178df7b13c478b5470328f38e36a5e37",
+    "createdAt": "2026-09-22T15:10:53.661Z",
+    "xp": 81,
+    "coins": 27,
+    "achievements": [
+      "race-first",
+      "race-speed"
+    ],
+    "streaks": {
+      "global": {
+        "count": 1,
+        "last": "2026-09-22"
+      }
+    },
+    "stats": {
+      "minirace": {
+        "plays": 2,
+        "best": 2000,
+        "completions": 2,
+        "stage": 9,
+        "lastMode": "time-trial",
+        "bestTime": 18.42,
+        "racesPlayed": 2
+      },
+      "riddle": {
+        "plays": 1,
+        "best": 30,
+        "completions": 0,
+        "stage": 1
+      }
+    },
+    "plan": "free"
+  },
+  {
+    "id": "u_mud0hhwcc1fd82",
+    "username": "sam",
+    "passwordHash": "cb87c8cd3e99813ab853b4fe25b057b8:d78181acbe7c2105dbdbfb8ac482c32deb19229983327c6d560593af23f77099",
+    "createdAt": "2026-09-22T18:32:36.993Z",
+    "xp": 211,
+    "coins": 66,
+    "achievements": [
+      "race-first",
+      "race-speed",
+      "strike-first",
+      "number-first"
+    ],
+    "streaks": {
+      "global": {
+        "count": 1,
+        "last": "2026-09-22"
+      }
+    },
+    "stats": {
+      "minirace": {
+        "plays": 3,
+        "best": 1815,
+        "completions": 3,
+        "stage": 4,
+        "lastMode": "quick",
+        "bestTime": 8.37529999999702,
+        "racesPlayed": 3
+      },
+      "targetstrike": {
+        "plays": 2,
+        "best": 872,
+        "completions": 2,
+        "stage": 3,
+        "lastMode": "quick",
+        "accuracy": 89,
+        "targetsHit": 16
+      },
+      "numberrush": {
+        "plays": 1,
+        "best": 80,
+        "completions": 0,
+        "stage": 1,
+        "lastMode": "quick",
+        "accuracy": 17,
+        "correctAnswers": 1
+      },
+      "penalty": {
+        "plays": 1,
+        "best": 5,
+        "completions": 0,
+        "stage": 1
+      }
+    },
+    "plan": "free"
+  }
+]
