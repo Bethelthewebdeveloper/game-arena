@@ -39,7 +39,7 @@
     header.innerHTML = `
       <div class="mx-auto flex max-w-3xl items-center justify-between px-4 py-3">
         <a href="/dashboard" class="min-h-11 inline-flex items-center text-sm text-cyan-300 hover:underline">← Arena</a>
-        <p class="font-display text-xs tracking-wider text-white">${title}</p>
+        <img src="/brand/logo-mark.png" alt="" class="h-7 w-auto" /><p class="font-display text-xs tracking-wider text-white">${title}</p>
         <a href="/leaderboard" class="min-h-11 inline-flex items-center text-sm text-slate-400 hover:text-white">Ranks</a>
       </div>`;
     document.body.prepend(header);

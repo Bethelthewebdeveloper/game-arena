@@ -1,9 +1,16 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+  <script>
+  window.va = window.va || function () {
+    (window.vaq = window.vaq || []).push(arguments);
+  };
+</script>
+<script defer src="/_vercel/insights/script.js"></script>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta name="theme-color" content="#070b16" />
+  <link rel="icon" href="/icons/favicon-32.png" type="image/png" />
   <link rel="manifest" href="/manifest.webmanifest" />
   <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" />
 
@@ -16,10 +23,7 @@
 </head>
 <body class="min-h-screen bg-[#070b16] font-sans text-slate-200 antialiased">
   <div class="mx-auto flex min-h-screen max-w-md flex-col justify-center px-4 py-10">
-    <a href="/" class="mb-8 inline-flex items-center gap-2 self-start">
-      <span class="grid h-9 w-9 place-items-center rounded-xl bg-gradient-to-br from-cyan-400 to-violet-500 text-slate-950"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M4 16l8-12 8 12H4z"/></svg></span>
-      <span class="font-display text-sm font-bold tracking-wider text-white">GAME ARENA</span>
-    </a>
+    <a href="/" class="mb-8 inline-flex items-center self-start"><img src="/brand/logo-wordmark.png" alt="Game Arena" width="170" height="54" class="h-8 w-auto sm:h-9" /></a>
     <h1 class="text-3xl font-semibold text-white">Create your profile</h1>
     <p class="mt-2 text-sm text-slate-400">Join Game Arena and start building progress across every game.</p>
     <form id="form" class="mt-8 space-y-4" novalidate>

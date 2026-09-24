@@ -1,4 +1,4 @@
-const VERSION = "ga-static-v3";
+const VERSION = "ga-static-v5";
 const PRECACHE = [
   "/",
   "/offline.html",
@@ -7,6 +7,8 @@ const PRECACHE = [
   "/js/icons.js",
   "/icons/icon-192.png",
   "/icons/icon-512.png",
+  "/brand/logo-wordmark.png",
+  "/brand/logo-mark.png",
   "/manifest.webmanifest"
 ];
 
