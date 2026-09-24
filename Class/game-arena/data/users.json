@@ -96,5 +96,17 @@
       }
     },
     "plan": "free"
+  },
+  {
+    "id": "u_mufwb4ah97a6b4",
+    "username": "prodwb46q",
+    "passwordHash": "b9a5b26b88758c6b078b3ad016d62011:b627aeaaf199568028291bc354d32f32d3f0e69ea0ed8fa3ce0fdc92eea59390",
+    "createdAt": "2026-09-24T18:58:59.452Z",
+    "xp": 0,
+    "coins": 0,
+    "achievements": [],
+    "streaks": {},
+    "stats": {},
+    "plan": "free"
   }
 ]

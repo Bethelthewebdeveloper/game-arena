@@ -80,11 +80,24 @@ const SESSION_SECRET = process.env.SESSION_SECRET || "game-arena-session-v1";
 let dataWritable = true;
 const writeQueue = Promise.resolve();
 
+function bundledDataFile(name) {
+  return path.join(__dirname, "data", name);
+}
+
+function seedFile(dest, name) {
+  if (fs.existsSync(dest)) return;
+  const bundled = bundledDataFile(name);
+  if (fs.existsSync(bundled)) {
+    try { fs.copyFileSync(bundled, dest); return; } catch {}
+  }
+  fs.writeFileSync(dest, "[]");
+}
+
 function ensureData() {
   try {
     if (!fs.existsSync(DATA_DIR)) fs.mkdirSync(DATA_DIR, { recursive: true });
-    if (!fs.existsSync(USERS_FILE)) fs.writeFileSync(USERS_FILE, "[]");
-    if (!fs.existsSync(SCORES_FILE)) fs.writeFileSync(SCORES_FILE, "[]");
+    seedFile(USERS_FILE, "users.json");
+    seedFile(SCORES_FILE, "scores.json");
     fs.accessSync(DATA_DIR, fs.constants.W_OK);
     dataWritable = true;
   } catch (err) {
@@ -256,7 +269,7 @@ function setVaultCookie(res, req, user, secure) {
   const users = Array.isArray(current.users) ? current.users : [];
   const next = users.filter((u) => u.username.toLowerCase() !== user.username.toLowerCase());
   next.push({ id: user.id, username: user.username, passwordHash: user.passwordHash });
-  const token = signToken({ users: next.slice(-20), exp: Date.now() + 14 * 24 * 60 * 60 * 1000 });
+  const token = signToken({ users: next.slice(-5), exp: Date.now() + 14 * 24 * 60 * 60 * 1000 });
   appendCookie(res, "ga.vault=" + token + "; " + cookieFlags(secure));
 }
 
@@ -305,7 +318,9 @@ function isSecureReq(req) {
 
 const rateBuckets = new Map();
 function rateLimit(req, key, limit, windowMs) {
-  const ip = String((req.headers["x-forwarded-for"] || "").split(",")[0] || req.socket.remoteAddress || "unknown");
+  const forwarded = String(req.headers["x-forwarded-for"] || "").split(",")[0].trim();
+  const sock = req.socket && req.socket.remoteAddress;
+  const ip = forwarded || sock || "unknown";
   const id = key + ":" + ip;
   const now = Date.now();
   const bucket = rateBuckets.get(id) || [];
@@ -340,14 +355,22 @@ setInterval(() => {
 
 function sendJson(res, status, data) {
   const body = JSON.stringify(data);
-  const headers = {
-    "Content-Type": "application/json; charset=utf-8",
-    "Content-Length": Buffer.byteLength(body)
-  };
-  const cookies = res.getHeader("Set-Cookie");
-  if (cookies) headers["Set-Cookie"] = cookies;
-  res.writeHead(status, headers);
-  res.end(body);
+  try {
+    if (!res.headersSent) {
+      const headers = {
+        "Content-Type": "application/json; charset=utf-8",
+        "Content-Length": Buffer.byteLength(body)
+      };
+      try {
+        const cookies = res.getHeader("Set-Cookie");
+        if (cookies) headers["Set-Cookie"] = cookies;
+      } catch {}
+      res.writeHead(status, headers);
+    }
+  } catch (err) {
+    console.error("sendJson headers failed", err && err.message);
+  }
+  try { res.end(body); } catch (err) { console.error("sendJson end failed", err && err.message); }
 }
 
 function parseJsonBody(raw) {
@@ -358,9 +381,11 @@ function parseJsonBody(raw) {
 }
 
 function readBody(req) {
-  if (req.body !== undefined && req.body !== null && req.body !== "") {
-    return Promise.resolve(parseJsonBody(req.body));
-  }
+  const pre = req.body !== undefined && req.body !== null && req.body !== ""
+    ? req.body
+    : (req.rawBody !== undefined && req.rawBody !== null && req.rawBody !== "" ? req.rawBody : null);
+  if (pre !== null) return Promise.resolve(parseJsonBody(pre));
+  if (req.readableEnded || req.complete) return Promise.resolve({});
   return new Promise((resolve, reject) => {
     const chunks = [];
     let size = 0;
@@ -371,26 +396,29 @@ function readBody(req) {
       if (err) reject(err);
       else resolve(value);
     };
-    req.on("data", (c) => {
+    const onData = (c) => {
       size += c.length;
       if (size > MAX_BODY) {
         finish(new Error("BODY_TOO_LARGE"));
-        req.destroy();
+        try { req.destroy(); } catch {}
         return;
       }
       chunks.push(c);
-    });
+    };
+    req.on("data", onData);
     req.on("end", () => {
       try { finish(null, parseJsonBody(Buffer.concat(chunks).toString("utf8"))); }
       catch (err) { finish(err); }
     });
     req.on("error", (err) => finish(err));
     setTimeout(() => {
-      if (!settled && chunks.length === 0 && req.body) {
-        try { finish(null, parseJsonBody(req.body)); }
-        catch (err) { finish(err); }
-      }
-    }, 10);
+      if (settled) return;
+      try {
+        if (req.body) finish(null, parseJsonBody(req.body));
+        else if (chunks.length) finish(null, parseJsonBody(Buffer.concat(chunks).toString("utf8")));
+        else finish(null, {});
+      } catch (err) { finish(err); }
+    }, 250);
   });
 }
 
@@ -435,9 +463,20 @@ const PAGE_ROUTES = {
 
 async function handleRequest(req, res) {
   try {
-    const url = new URL(req.url, "http://" + (req.headers.host || "localhost"));
+    const rawUrl = req.url || req.originalUrl || "/";
+    const url = new URL(rawUrl, "http://" + (req.headers.host || "localhost"));
     const method = req.method || "GET";
     const pathname = url.pathname;
+
+    if (method === "OPTIONS") {
+      res.writeHead(204, {
+        "Access-Control-Allow-Methods": "GET,POST,OPTIONS",
+        "Access-Control-Allow-Headers": "Content-Type",
+        "Access-Control-Allow-Credentials": "true",
+        "Access-Control-Max-Age": "86400"
+      });
+      return res.end();
+    }
 
     if (method === "GET" && pathname === "/api/me") {
       const user = getSessionUser(req);

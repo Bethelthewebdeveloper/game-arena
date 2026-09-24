@@ -3,23 +3,36 @@
 <head>
   <meta charset="UTF-8" /><meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Trivia Rush — Game Arena</title>
-  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700&display=swap" rel="stylesheet" />
   <script src="https://cdn.tailwindcss.com"></script>
 </head>
 <body class="min-h-screen bg-[#100b1a] font-sans text-slate-200">
-  <main class="mx-auto max-w-xl px-4 py-10">
+  <main class="mx-auto max-w-xl px-4 py-6">
     <p class="text-xs uppercase tracking-widest text-violet-300">Game Arena · Trivia Rush</p>
-    <h1 class="mt-2 text-2xl font-semibold text-white">Answer quickly</h1>
-    <p class="mt-2 text-sm text-slate-400">Streak: <span id="streak">0</span> · Score: <span id="score">0</span></p>
-    <div class="mt-5 rounded-2xl border border-violet-400/25 bg-violet-500/10 p-5"><p class="text-[11px] uppercase tracking-widest text-violet-300">Question <span id="qn">1</span>/5</p><p id="q" class="mt-2 text-lg text-white"></p></div>
-    <div id="opts" class="mt-4 grid gap-2"></div>
-    <p id="msg" class="mt-4 text-sm text-slate-400"></p>
-    <section id="result" hidden class="mt-6 rounded-2xl border border-violet-400/20 p-5">
-      <h2 class="text-xl font-semibold text-white">TRIVIA COMPLETE</h2>
+    <h1 class="mt-1 text-2xl font-semibold text-white">Beat the buzzer</h1>
+    <section id="lobby" class="mt-5 space-y-3">
+      <select id="cat" class="min-h-11 w-full rounded-xl border border-violet-400/20 bg-black/30 px-3">
+        <option value="mix">Mixed</option>
+        <option value="sci">Science & numbers</option>
+        <option value="world">World</option>
+      </select>
+      <button id="go" class="min-h-12 w-full rounded-xl bg-violet-400 font-semibold text-slate-950">Start quiz</button>
+    </section>
+    <section id="play" hidden>
+      <div class="mb-3 flex justify-between text-sm"><span id="qn"></span><span>Score <span id="score">0</span></span><span id="clock">16</span></div>
+      <div class="h-1.5 overflow-hidden rounded-full bg-white/10"><div id="bar" class="h-full w-full bg-violet-400"></div></div>
+      <div class="mt-4 rounded-2xl border border-violet-400/25 bg-violet-500/10 p-5">
+        <p id="q" class="text-lg text-white"></p>
+      </div>
+      <div id="opts" class="mt-4 grid gap-2"></div>
+      <p id="msg" class="mt-3 min-h-6 text-sm"></p>
+    </section>
+    <section id="result" hidden class="mt-6 rounded-2xl border border-violet-400/25 p-5">
+      <h2 class="text-xl font-semibold text-white">QUIZ COMPLETE</h2>
       <p id="rbody" class="mt-3 text-sm leading-7"></p>
       <div class="mt-4 flex flex-wrap gap-2">
-        <button id="again" class="min-h-11 rounded-xl bg-violet-400 px-4 py-2 font-semibold text-slate-950">Play Again</button>
-        <a href="/dashboard" class="min-h-11 inline-flex items-center rounded-xl border border-white/15 px-4 py-2">Back to Games</a>
+        <button id="again" class="min-h-11 rounded-xl bg-violet-400 px-4 font-semibold text-slate-950">Play Again</button>
+        <a href="/dashboard" class="min-h-11 inline-flex items-center rounded-xl border border-white/15 px-4">Back to Games</a>
       </div>
     </section>
   </main>
@@ -28,50 +41,66 @@
   <script>
     GameShell.mountChrome("TRIVIA RUSH");
     GameShell.guard();
-    document.getElementById("again").onclick = () => { GameShell.resetSubmit(); location.reload(); };
-    const QS = [
-      { q: "How many minutes are in a full hour?", opts: ["30", "60", "90", "45"], a: 1 },
-      { q: "Which planet is known as the Red Planet?", opts: ["Venus", "Mars", "Jupiter", "Mercury"], a: 1 },
-      { q: "What is 7 × 8?", opts: ["54", "56", "64", "48"], a: 1 },
-      { q: "Which ocean is the largest?", opts: ["Atlantic", "Indian", "Pacific", "Arctic"], a: 2 },
-      { q: "How many sides does a hexagon have?", opts: ["5", "6", "7", "8"], a: 1 },
+    const ALL=[
+      {c:"sci",q:"How many minutes are in an hour?",opts:["30","60","90","45"],a:1},
+      {c:"sci",q:"What is 7 × 8?",opts:["54","56","64","48"],a:1},
+      {c:"sci",q:"How many sides does a hexagon have?",opts:["5","6","7","8"],a:1},
+      {c:"world",q:"Which planet is the Red Planet?",opts:["Venus","Mars","Jupiter","Mercury"],a:1},
+      {c:"world",q:"Which ocean is the largest?",opts:["Atlantic","Indian","Pacific","Arctic"],a:2},
+      {c:"world",q:"What is the capital of France?",opts:["Lyon","Paris","Nice","Lille"],a:1},
+      {c:"sci",q:"Water freezes at what °C?",opts:["0","10","32","100"],a:0},
+      {c:"world",q:"How many continents are commonly listed?",opts:["5","6","7","8"],a:2}
     ];
-    let i = 0, score = 0, streak = 0, done = false;
-    function render() {
-      if (i >= QS.length) {
-        done = true;
-        document.getElementById("q").textContent = "Round complete.";
-        document.getElementById("opts").innerHTML = "";
-        document.getElementById("msg").textContent = "Final score " + score;
-        document.getElementById("rbody").textContent = "Score: " + score + " · Best streak: " + streak;
-        document.getElementById("result").hidden = false;
-        GameShell.submitRun("trivia", score, 0, 0, { completed: true, stage: 1 });
-        return;
-      }
-      const item = QS[i];
-      document.getElementById("qn").textContent = (i+1);
-      document.getElementById("q").textContent = item.q;
-      document.getElementById("opts").innerHTML = item.opts.map((o, idx) =>
-        `<button data-i="${idx}" class="min-h-14 rounded-xl border border-violet-400/20 bg-white/5 px-4 py-3 text-left">${o}</button>`
-      ).join("");
-      document.querySelectorAll("#opts button").forEach((b) => {
-        b.onclick = () => {
-          if (done) return;
-          if (Number(b.dataset.i) === item.a) {
-            streak += 1; score += 10 + streak;
-            document.getElementById("msg").textContent = "Correct.";
-          } else {
-            streak = 0;
-            document.getElementById("msg").textContent = "Missed.";
-          }
-          document.getElementById("streak").textContent = streak;
-          document.getElementById("score").textContent = score;
-          i += 1;
-          render();
-        };
-      });
+    let S, tick;
+    window.__gaCleanup=()=>clearInterval(tick);
+    document.getElementById("go").onclick=start;
+    document.getElementById("again").onclick=()=>{ document.getElementById("lobby").hidden=false; document.getElementById("result").hidden=true; };
+    function start(){
+      GameShell.resetSubmit();
+      clearInterval(tick);
+      const cat=document.getElementById("cat").value;
+      const pool=cat==="mix"?ALL.slice():ALL.filter(x=>x.c===cat);
+      S={i:0,score:0,streak:0,ok:0,list:pool.sort(()=>Math.random()-0.5).slice(0,5),done:false};
+      document.getElementById("lobby").hidden=true;
+      document.getElementById("result").hidden=true;
+      document.getElementById("play").hidden=false;
+      nextQ();
     }
-    render();
+    function nextQ(){
+      clearInterval(tick);
+      if(S.i>=S.list.length) return finish();
+      const item=S.list[S.i];
+      document.getElementById("qn").textContent="Q "+(S.i+1)+"/"+S.list.length;
+      document.getElementById("q").textContent=item.q;
+      document.getElementById("msg").textContent="";
+      document.getElementById("score").textContent=S.score;
+      document.getElementById("opts").innerHTML=item.opts.map((o,idx)=>'<button data-i="'+idx+'" class="min-h-14 rounded-xl border border-violet-400/20 bg-white/5 px-4 text-left">'+o+"</button>").join("");
+      let left=16;
+      document.getElementById("clock").textContent=left;
+      document.getElementById("bar").style.width="100%";
+      tick=setInterval(()=>{
+        left-=1; document.getElementById("clock").textContent=left;
+        document.getElementById("bar").style.width=(left/16*100)+"%";
+        if(left<=0){ clearInterval(tick); lock(-1,item); }
+      },1000);
+      document.querySelectorAll("#opts button").forEach(b=>b.onclick=()=>{ clearInterval(tick); lock(Number(b.dataset.i),item); });
+    }
+    function lock(choice,item){
+      document.querySelectorAll("#opts button").forEach(b=>b.disabled=true);
+      const good=choice===item.a;
+      if(good){ S.streak+=1; S.ok+=1; S.score+=10+S.streak; document.getElementById("msg").textContent="Correct."; }
+      else { S.streak=0; document.getElementById("msg").textContent=choice<0?"Time up.":"Wrong. Answer: "+item.opts[item.a]; }
+      document.getElementById("score").textContent=S.score;
+      S.i+=1;
+      setTimeout(nextQ,700);
+    }
+    async function finish(){
+      if(S.done) return; S.done=true;
+      document.getElementById("play").hidden=true;
+      document.getElementById("result").hidden=false;
+      document.getElementById("rbody").textContent="Score "+S.score+" · Correct "+S.ok+"/"+S.list.length;
+      await GameShell.submitRun("trivia", S.score, 0, 0, { completed:true, stage:S.list.length, accuracy:Math.round(100*S.ok/S.list.length) });
+    }
   </script>
 </body>
 </html>

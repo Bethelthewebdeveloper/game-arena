@@ -1,43 +1,41 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta charset="UTF-8" /><meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Reflex Challenge — Game Arena</title>
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700&display=swap" rel="stylesheet" />
   <script src="https://cdn.tailwindcss.com"></script>
   <style>
-    .arena {
-      background:
-        radial-gradient(circle at 50% 50%, rgba(244,63,94,.12), transparent 55%),
-        #12080c;
-    }
-    .tgt {
-      position: absolute;
-      width: 72px; height: 72px; border-radius: 999px;
-      border: 3px solid #fb7185;
-      background: radial-gradient(circle, #fff 0 12%, #fb7185 13% 38%, #fff 39% 52%, #fb7185 53% 100%);
-      box-shadow: 0 0 18px rgba(251,113,133,.45);
-      animation: pop .18s ease-out;
-      touch-action: manipulation;
-    }
-    @keyframes pop { from { transform: scale(.4); opacity: 0; } to { transform: scale(1); opacity: 1; } }
-    .tgt.hit { transform: scale(1.2); opacity: 0; transition: .12s; }
+    .arena{background:radial-gradient(circle at 50% 40%,rgba(244,63,94,.16),#12080c 62%)}
+    .tgt{position:absolute;border-radius:999px;border:3px solid #fb7185;background:radial-gradient(circle,#fff 0 14%,#fb7185 15% 40%,#fff 41% 55%,#fb7185 56% 100%);box-shadow:0 0 16px rgba(251,113,133,.5);touch-action:manipulation}
+    .wait{opacity:.35}
   </style>
 </head>
 <body class="min-h-screen bg-[#140b10] font-sans text-slate-200">
   <main class="mx-auto max-w-xl px-4 py-6">
     <p class="text-xs uppercase tracking-widest text-rose-300">Game Arena · Reflex Challenge</p>
-    <h1 class="mt-1 text-2xl font-semibold text-white">Hit the moving mark</h1>
-    <p class="mt-1 text-sm text-slate-400">Hits <span id="score">0</span> · <span id="time">20</span>s</p>
-    <div id="field" class="arena relative mt-4 h-80 overflow-hidden rounded-2xl border border-rose-400/20"></div>
-    <button id="start" class="mt-4 min-h-11 rounded-xl bg-rose-400 px-4 py-2 font-semibold text-slate-950">Start</button>
-    <section id="result" hidden class="mt-6 rounded-2xl border border-rose-400/20 p-5">
-      <h2 class="text-xl font-semibold text-white">TIME UP</h2>
+    <h1 class="mt-1 text-2xl font-semibold text-white">Beat the mark</h1>
+    <section id="lobby" class="mt-5 space-y-3">
+      <select id="mode" class="min-h-11 w-full rounded-xl border border-rose-400/20 bg-black/30 px-3">
+        <option value="reaction">Reaction Test</option>
+        <option value="five">Five Rounds</option>
+        <option value="speed">Speed Rush</option>
+        <option value="survival">Survival</option>
+        <option value="endless">Endless</option>
+      </select>
+      <button id="go" class="min-h-12 w-full rounded-xl bg-rose-400 font-semibold text-slate-950">Start</button>
+    </section>
+    <section id="play" hidden>
+      <p class="mb-2 text-sm text-rose-100/80"><span id="hud"></span></p>
+      <div id="field" class="arena relative h-80 overflow-hidden rounded-2xl border border-rose-400/25"></div>
+      <p id="msg" class="mt-3 text-sm text-slate-300">Wait for the target. Do not tap early.</p>
+    </section>
+    <section id="result" hidden class="mt-6 rounded-2xl border border-rose-400/25 p-5">
+      <h2 class="text-xl font-semibold text-white">REFLEX COMPLETE</h2>
       <p id="rbody" class="mt-3 text-sm leading-7"></p>
       <div class="mt-4 flex flex-wrap gap-2">
-        <button id="again" class="min-h-11 rounded-xl bg-rose-400 px-4 py-2 font-semibold text-slate-950">Play Again</button>
-        <a href="/dashboard" class="min-h-11 inline-flex items-center rounded-xl border border-white/15 px-4 py-2">Back to Games</a>
+        <button id="again" class="min-h-11 rounded-xl bg-rose-400 px-4 font-semibold text-slate-950">Play Again</button>
+        <a href="/dashboard" class="min-h-11 inline-flex items-center rounded-xl border border-white/15 px-4">Back to Games</a>
       </div>
     </section>
   </main>
@@ -46,44 +44,87 @@
   <script>
     GameShell.mountChrome("REFLEX CHALLENGE");
     GameShell.guard();
-    let score = 0, playing = false, timer = null, mover = null;
-    const field = document.getElementById("field");
-    window.__gaCleanup = () => { playing = false; clearInterval(timer); clearInterval(mover); };
-    function endGame() {
-      playing = false; clearInterval(timer); clearInterval(mover); field.innerHTML = "";
-      document.getElementById("rbody").textContent = "Hits: " + score;
-      document.getElementById("result").hidden = false;
-      GameShell.submitRun("reflex", score, 0, 0, { completed: score >= 8, stage: 1 });
+    let S, spawnT, endT;
+    window.__gaCleanup=()=>{clearTimeout(spawnT);clearInterval(endT);};
+    const field=document.getElementById("field");
+    function lobby(){ document.getElementById("lobby").hidden=false; document.getElementById("play").hidden=true; document.getElementById("result").hidden=true; }
+    document.getElementById("again").onclick=lobby;
+    document.getElementById("go").onclick=start;
+    function start(){
+      GameShell.resetSubmit();
+      clearTimeout(spawnT); clearInterval(endT);
+      const mode=document.getElementById("mode").value;
+      S={mode,hits:0,miss:0,early:0,times:[],round:0,alive:true,waiting:false};
+      document.getElementById("lobby").hidden=true;
+      document.getElementById("result").hidden=true;
+      document.getElementById("play").hidden=false;
+      hud();
+      if(mode==="speed"){ let t=20; document.getElementById("msg").textContent="Hit as many as you can.";
+        endT=setInterval(()=>{ t--; hud(t); if(t<=0) finish(); },1000); appear(true); }
+      else nextWait();
     }
-    function spawn() {
-      if (!playing) return;
-      field.innerHTML = "";
-      const t = document.createElement("button");
-      t.className = "tgt";
-      t.style.left = (8 + Math.random() * 70) + "%";
-      t.style.top = (8 + Math.random() * 68) + "%";
-      t.setAttribute("aria-label", "Target");
-      t.onclick = () => {
-        if (!playing) return;
-        t.classList.add("hit");
-        score += 1;
-        document.getElementById("score").textContent = score;
-        setTimeout(spawn, 40);
+    function hud(extra){
+      document.getElementById("hud").textContent=S.mode+" · Hits "+S.hits+" · Miss "+S.miss+(extra!=null?" · "+extra+"s":"");
+    }
+    function nextWait(){
+      if(!S.alive) return;
+      S.round+=1;
+      if(S.mode==="five" && S.round>5) return finish();
+      field.innerHTML="";
+      field.classList.add("wait");
+      S.waiting=true;
+      document.getElementById("msg").textContent="Wait…";
+      field.onclick=early;
+      spawnT=setTimeout(()=>{ S.waiting=false; field.onclick=null; appear(false); }, 700+Math.random()*1400);
+    }
+    function early(){
+      if(!S.waiting) return;
+      S.early+=1; S.miss+=1;
+      document.getElementById("msg").textContent="Too early.";
+      if(S.mode==="survival") return finish();
+      clearTimeout(spawnT); nextWait();
+    }
+    function appear(auto){
+      field.classList.remove("wait");
+      field.innerHTML="";
+      const t=document.createElement("button");
+      const size=S.mode==="speed"?56+Math.random()*20:64+Math.random()*28;
+      t.className="tgt";
+      t.style.width=t.style.height=size+"px";
+      t.style.left=(6+Math.random()*70)+"%";
+      t.style.top=(8+Math.random()*62)+"%";
+      const born=performance.now();
+      t.onclick=(e)=>{
+        e.stopPropagation();
+        if(!S.alive) return;
+        const ms=Math.round(performance.now()-born);
+        S.hits+=1; S.times.push(ms);
+        t.remove();
+        document.getElementById("msg").textContent="Hit in "+ms+" ms";
+        hud();
+        if(auto) setTimeout(()=>appear(true), 220);
+        else nextWait();
       };
       field.appendChild(t);
+      if(S.mode==="survival"||S.mode==="endless"||S.mode==="five"||S.mode==="reaction"){
+        spawnT=setTimeout(()=>{
+          if(!t.parentNode) return;
+          t.remove(); S.miss+=1; document.getElementById("msg").textContent="Missed.";
+          if(S.mode==="survival") return finish();
+          if(S.mode==="reaction" && S.round>=5) return finish();
+          nextWait();
+        }, S.mode==="speed"?900:1200);
+      }
     }
-    document.getElementById("start").onclick = start;
-    document.getElementById("again").onclick = () => { GameShell.resetSubmit(); document.getElementById("result").hidden = true; start(); };
-    function start() {
-      if (playing) return;
-      playing = true; score = 0;
-      document.getElementById("score").textContent = "0";
-      document.getElementById("result").hidden = true;
-      let t = 20;
-      document.getElementById("time").textContent = t;
-      timer = setInterval(() => { t -= 1; document.getElementById("time").textContent = t; if (t <= 0) endGame(); }, 1000);
-      spawn();
-      mover = setInterval(() => { if (playing) spawn(); }, 850);
+    async function finish(){
+      if(!S.alive) return; S.alive=false;
+      clearTimeout(spawnT); clearInterval(endT);
+      const avg=S.times.length?Math.round(S.times.reduce((a,b)=>a+b,0)/S.times.length):0;
+      const score=Math.max(0, S.hits*12 - S.miss*3);
+      document.getElementById("play").hidden=true;
+      document.getElementById("result").hidden=false;
+      document.getElementById("rbody").textContent="Hits "+S.hits+" · Misses "+S.miss+" · Avg "+avg+"ms · Score "+score;
+      await GameShell.submitRun("reflex", score, 0, 0, { completed:S.hits>=3, stage:S.round, mode:S.mode, time:avg/1000 });
     }
   </script>
 </body>

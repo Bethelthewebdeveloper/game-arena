@@ -1,90 +1,149 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta charset="UTF-8" /><meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Riddle Game — Game Arena</title>
-  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700&family=Outfit:wght@400;600&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700&display=swap" rel="stylesheet" />
   <script src="https://cdn.tailwindcss.com"></script>
-  <script>tailwind.config={theme:{extend:{fontFamily:{display:['Orbitron','sans-serif'],sans:['Outfit','system-ui','sans-serif']}}}}</script>
+  <style>
+    .parchment{background:linear-gradient(180deg,#2a1d0a,#1a1308);border:1px solid rgba(251,191,36,.28)}
+    .ok{animation:flash .35s} .bad{animation:shake .28s}
+    @keyframes flash{from{box-shadow:0 0 0 0 rgba(74,222,128,.7)}to{box-shadow:0 0 0 16px transparent}}
+    @keyframes shake{20%{transform:translateX(-4px)}60%{transform:translateX(4px)}100%{transform:none}}
+  </style>
 </head>
-<body class="min-h-screen bg-[#0c0a12] font-sans text-slate-200">
-  <main class="mx-auto max-w-xl px-4 py-10">
+<body class="min-h-screen bg-[#120c08] font-sans text-slate-200">
+  <main class="mx-auto max-w-xl px-4 py-6">
     <p class="text-xs uppercase tracking-widest text-amber-300">Game Arena · Riddle Game</p>
-    <h1 class="mt-2 text-2xl font-semibold text-white">Solve the riddle</h1>
-    <p id="timer" class="mt-2 text-sm text-slate-400">Time left: 45s</p>
-    <div class="mt-5 rounded-2xl border border-amber-300/25 bg-amber-400/10 p-5"><p class="text-[11px] uppercase tracking-widest text-amber-300">Puzzle</p><p id="prompt" class="mt-2 text-lg leading-relaxed text-white"></p></div>
-    <form id="form" class="mt-6 flex gap-2">
-      <input id="answer" class="flex-1 rounded-xl border border-white/10 bg-white/5 px-3 py-2 outline-none ring-amber-300 focus:ring-2" autocomplete="off" aria-label="Your answer" />
-      <button class="rounded-xl bg-amber-400 px-4 py-2 font-semibold text-slate-950">Submit</button>
-    </form>
-    <p id="status" class="mt-3 text-sm text-slate-400"></p>
-    <aside class="mt-8 rounded-2xl border border-amber-300/20 bg-amber-400/5 p-4">
-      <h2 class="text-sm font-semibold text-amber-200">AI companion</h2>
-      <p class="mt-1 text-xs text-slate-400">Available only inside this game. Hints explain the puzzle without giving the full answer until you ask.</p>
-      <div class="mt-3 flex flex-wrap gap-2">
-        <button type="button" id="hint-btn" class="rounded-lg border border-amber-300/30 px-3 py-1.5 text-sm">Hint</button>
-        <button type="button" id="explain-btn" class="rounded-lg border border-amber-300/30 px-3 py-1.5 text-sm">Explain</button>
-        <button type="button" id="similar-btn" class="rounded-lg border border-amber-300/30 px-3 py-1.5 text-sm">Similar challenge</button>
+    <h1 class="mt-1 text-2xl font-semibold text-white">Crack the riddle</h1>
+    <section id="lobby" class="mt-5 space-y-3">
+      <select id="mode" class="min-h-11 w-full rounded-xl border border-amber-400/20 bg-black/30 px-3">
+        <option value="classic">Classic — 5 riddles</option>
+        <option value="timed">Timed — 45 seconds</option>
+        <option value="endless">Endless — 3 misses ends it</option>
+        <option value="survival">Survival — 18s per riddle</option>
+        <option value="daily">Daily Challenge</option>
+      </select>
+      <button id="start" class="min-h-12 w-full rounded-xl bg-amber-400 font-semibold text-slate-950">Start</button>
+    </section>
+    <section id="play" hidden>
+      <div class="mb-3 flex justify-between text-sm text-amber-100/80">
+        <span id="hud-mode"></span><span id="hud-prog"></span><span id="hud-time"></span>
       </div>
-      <p id="ai" class="mt-3 text-sm text-amber-100/90"></p>
-    </aside>
-    <section id="result" hidden class="mt-6 rounded-2xl border border-amber-400/20 p-5">
-      <h2 class="text-xl font-semibold text-white">RIDDLE ROUND OVER</h2>
+      <article id="card" class="parchment rounded-2xl p-5">
+        <p class="text-[11px] uppercase tracking-[0.2em] text-amber-300">Puzzle</p>
+        <p id="prompt" class="mt-3 text-lg leading-relaxed text-amber-50"></p>
+      </article>
+      <form id="form" class="mt-4 flex gap-2">
+        <input id="answer" class="min-h-12 flex-1 rounded-xl border border-amber-400/20 bg-black/30 px-3" autocomplete="off" aria-label="Answer" />
+        <button class="min-h-12 rounded-xl bg-amber-400 px-4 font-semibold text-slate-950">Solve</button>
+      </form>
+      <p id="status" class="mt-2 min-h-6 text-sm"></p>
+      <div class="mt-4 rounded-2xl border border-amber-300/15 bg-amber-400/5 p-4">
+        <p class="text-xs uppercase tracking-widest text-amber-200">Companion</p>
+        <div class="mt-2 flex flex-wrap gap-2">
+          <button type="button" id="hint" class="min-h-10 rounded-lg border border-amber-300/30 px-3 text-sm">Hint</button>
+          <button type="button" id="explain" class="min-h-10 rounded-lg border border-amber-300/30 px-3 text-sm">Explain</button>
+        </div>
+        <p id="ai" class="mt-2 text-sm text-amber-100/90"></p>
+      </div>
+    </section>
+    <section id="result" hidden class="mt-6 rounded-2xl border border-amber-400/25 p-5">
+      <h2 class="text-xl font-semibold text-white">RIDDLE COMPLETE</h2>
       <p id="rbody" class="mt-3 text-sm leading-7"></p>
       <div class="mt-4 flex flex-wrap gap-2">
-        <button id="again" class="min-h-11 rounded-xl bg-amber-400 px-4 py-2 font-semibold text-slate-950">Play Again</button>
-        <a href="/dashboard" class="min-h-11 inline-flex items-center rounded-xl border border-white/15 px-4 py-2">Back to Games</a>
+        <button id="again" class="min-h-11 rounded-xl bg-amber-400 px-4 font-semibold text-slate-950">Play Again</button>
+        <a href="/dashboard" class="min-h-11 inline-flex items-center rounded-xl border border-white/15 px-4">Back to Games</a>
       </div>
     </section>
   </main>
   <script src="/js/arena.js"></script>
   <script src="/js/game-shell.js"></script>
   <script>
-    const RIDDLES = [
-      { q: "I have keys but no locks. I have space but no room. You can enter, but you cannot go outside. What am I?", a: "keyboard", hint: "Think about something you type on.", explain: "A keyboard has keys, a space bar, and an enter key.", similar: "I speak without a mouth and hear without ears." },
-      { q: "What has to be broken before you can use it?", a: "egg", hint: "Breakfast often starts with it.", explain: "An egg must be cracked before it is used.", similar: "The more of me you take, the more you leave behind." },
-      { q: "What can travel around the world while staying in a corner?", a: "stamp", hint: "It lives on an envelope.", explain: "A postage stamp stays in the corner of a letter as the letter travels.", similar: "I have cities but no houses." },
-    ];
-    let i = 0, score = 0, left = 45, done = false;
-    const r = () => RIDDLES[i % RIDDLES.length];
-    document.getElementById("prompt").textContent = r().q;
     GameShell.mountChrome("RIDDLE GAME");
     GameShell.guard();
-    document.getElementById("again").onclick = () => { GameShell.resetSubmit(); location.reload(); };
-    const tick = setInterval(() => {
-      if (done) return;
-      left -= 1;
-      document.getElementById("timer").textContent = "Time left: " + left + "s";
-      if (left <= 0) finish();
-    }, 1000);
+    const BANK = [
+      { q:"I have keys but no locks, space but no room. You can enter but not go outside. What am I?", a:"keyboard", hint:"You type on it.", explain:"A keyboard has keys, a space bar, and Enter." },
+      { q:"What has to be broken before you can use it?", a:"egg", hint:"Breakfast.", explain:"An egg is cracked first." },
+      { q:"What can travel the world while staying in a corner?", a:"stamp", hint:"Lives on an envelope.", explain:"A postage stamp rides the letter." },
+      { q:"The more you take, the more you leave behind. What am I?", a:"footsteps", hint:"Walking.", explain:"Each step leaves a footprint." },
+      { q:"What has cities but no houses, forests but no trees?", a:"map", hint:"It is paper.", explain:"A map draws places, not the places themselves." },
+      { q:"What gets wetter the more it dries?", a:"towel", hint:"Bathroom.", explain:"A towel dries you and gets wet." },
+      { q:"What has a head and a tail but no body?", a:"coin", hint:"In your pocket.", explain:"Coins have heads and tails." },
+      { q:"What can you catch but not throw?", a:"cold", hint:"Winter.", explain:"You catch a cold." }
+    ];
+    let S, tick;
     window.__gaCleanup = () => clearInterval(tick);
-    document.getElementById("form").addEventListener("submit", (e) => {
-      e.preventDefault();
-      const val = document.getElementById("answer").value.trim().toLowerCase();
-      if (val === r().a) {
-        score += 10;
-        i += 1;
-        document.getElementById("answer").value = "";
-        document.getElementById("prompt").textContent = r().q;
-        document.getElementById("status").textContent = "Correct. Next riddle.";
-        document.getElementById("ai").textContent = "";
-      } else {
-        document.getElementById("status").textContent = "Not quite. Try again or use a hint.";
+    function seeded(n){ let x=n; return () => (x=(x*1664525+1013904223)%4294967296)/4294967296; }
+    function pick(mode){
+      if(mode==="daily"){
+        const d=new Date().toISOString().slice(0,10);
+        const rng=seeded(Number(d.replace(/-/g,"")));
+        return BANK.map((r,i)=>({r,i})).sort(()=>rng()-0.5).map(x=>x.r);
       }
-    });
-    document.getElementById("hint-btn").onclick = () => { document.getElementById("ai").textContent = r().hint; };
-    document.getElementById("explain-btn").onclick = () => { document.getElementById("ai").textContent = r().explain; };
-    document.getElementById("similar-btn").onclick = () => { document.getElementById("ai").textContent = "Practice this: " + r().similar; };
-    async function finish() {
-      if (done) return;
-      done = true;
-      clearInterval(tick);
-      document.getElementById("status").textContent = "Time up. Score: " + score;
-      document.getElementById("rbody").textContent = "Score: " + score + " · Riddles cleared: " + i;
-      document.getElementById("result").hidden = false;
-      await GameShell.submitRun("riddle", score, 0, 0, { completed: score >= 20, stage: 1 });
+      return BANK.slice().sort(()=>Math.random()-0.5);
     }
+    function show(i){
+      const r=S.list[i%S.list.length];
+      document.getElementById("prompt").textContent=r.q;
+      document.getElementById("answer").value="";
+      document.getElementById("ai").textContent="";
+      document.getElementById("hud-prog").textContent="Solved "+S.solved+" · Score "+S.score;
+      document.getElementById("status").textContent="";
+    }
+    function start(){
+      GameShell.resetSubmit();
+      clearInterval(tick);
+      const mode=document.getElementById("mode").value;
+      S={mode,list:pick(mode),i:0,solved:0,miss:0,score:0,left: mode==="timed"?45:mode==="survival"?18:0, done:false};
+      document.getElementById("lobby").hidden=true;
+      document.getElementById("result").hidden=true;
+      document.getElementById("play").hidden=false;
+      document.getElementById("hud-mode").textContent=mode;
+      show(0);
+      if(mode==="timed"||mode==="survival"){
+        document.getElementById("hud-time").textContent=S.left+"s";
+        tick=setInterval(()=>{
+          if(S.done) return;
+          S.left-=1;
+          document.getElementById("hud-time").textContent=S.left+"s";
+          if(S.left<=0){
+            if(mode==="survival"){ S.miss+=1; S.i+=1; S.left=18; if(S.miss>=3) return finish(); show(S.i); }
+            else finish();
+          }
+        },1000);
+      } else document.getElementById("hud-time").textContent="";
+    }
+    async function finish(){
+      if(S.done) return; S.done=true; clearInterval(tick);
+      document.getElementById("play").hidden=true;
+      document.getElementById("result").hidden=false;
+      document.getElementById("rbody").textContent="Mode "+S.mode+" · Solved "+S.solved+" · Score "+S.score+" · Misses "+S.miss;
+      await GameShell.submitRun("riddle", S.score, 0, 0, { completed:S.solved>=3, stage:Math.max(1,S.solved), mode:S.mode });
+    }
+    document.getElementById("start").onclick=start;
+    document.getElementById("again").onclick=()=>{ document.getElementById("lobby").hidden=false; document.getElementById("result").hidden=true; };
+    document.getElementById("hint").onclick=()=>{ document.getElementById("ai").textContent=S.list[S.i%S.list.length].hint; };
+    document.getElementById("explain").onclick=()=>{ document.getElementById("ai").textContent=S.list[S.i%S.list.length].explain; };
+    document.getElementById("form").onsubmit=(e)=>{
+      e.preventDefault();
+      if(!S||S.done) return;
+      const val=document.getElementById("answer").value.trim().toLowerCase();
+      const card=document.getElementById("card");
+      const ans=S.list[S.i%S.list.length].a;
+      if(val===ans || val.replace(/s$/,"")===ans.replace(/s$/,"")){
+        S.solved+=1; S.score+=10; S.i+=1; card.classList.add("ok");
+        document.getElementById("status").textContent="Correct.";
+        if(S.mode==="survival") S.left=18;
+        if(S.mode==="classic" && S.solved>=5) return finish();
+        show(S.i);
+      } else {
+        S.miss+=1; card.classList.add("bad");
+        document.getElementById("status").textContent="Not that. Try again.";
+        if((S.mode==="endless"||S.mode==="survival") && S.miss>=3) return finish();
+      }
+      setTimeout(()=>card.classList.remove("ok","bad"),400);
+    };
   </script>
 </body>
 </html>

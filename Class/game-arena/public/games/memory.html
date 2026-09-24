@@ -1,40 +1,42 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta charset="UTF-8" /><meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Memory Challenge — Game Arena</title>
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700&display=swap" rel="stylesheet" />
   <script src="https://cdn.tailwindcss.com"></script>
   <style>
-    .card { perspective: 700px; }
-    .face {
-      transform-style: preserve-3d;
-      transition: transform .32s ease;
-      height: 78px;
-    }
-    .face.up { transform: rotateY(180deg); }
-    .front, .back {
-      position: absolute; inset: 0; backface-visibility: hidden;
-      border-radius: .85rem; display: grid; place-items: center;
-    }
-    .back { background: linear-gradient(145deg,#123044,#0b1b26); border: 1px solid rgba(56,189,248,.25); }
-    .front { transform: rotateY(180deg); border: 1px solid rgba(255,255,255,.15); font-size: 1.6rem; font-weight: 700; }
-    .done .front { box-shadow: 0 0 0 2px rgba(125,211,252,.5); }
+    .card{perspective:800px}
+    .face{transform-style:preserve-3d;transition:transform .3s;height:74px}
+    .face.up{transform:rotateY(180deg)}
+    .front,.back{position:absolute;inset:0;backface-visibility:hidden;border-radius:.85rem;display:grid;place-items:center}
+    .back{background:linear-gradient(145deg,#163246,#0b1b26);border:1px solid rgba(56,189,248,.3)}
+    .front{transform:rotateY(180deg);border:1px solid rgba(255,255,255,.14);font-weight:700;font-size:1.5rem}
+    .done .front{outline:2px solid #7dd3fc}
   </style>
 </head>
 <body class="min-h-screen bg-[#0a1218] font-sans text-slate-200">
   <main class="mx-auto max-w-xl px-4 py-6">
     <p class="text-xs uppercase tracking-widest text-sky-300">Game Arena · Memory Challenge</p>
     <h1 class="mt-1 text-2xl font-semibold text-white">Flip and match</h1>
-    <p class="mt-1 text-sm text-slate-400">Moves <span id="moves">0</span> · Pairs <span id="pairs">0</span>/8</p>
-    <div id="grid" class="mt-5 grid grid-cols-4 gap-2"></div>
-    <section id="result" hidden class="mt-6 rounded-2xl border border-sky-400/20 p-5">
-      <h2 class="text-xl font-semibold text-white">ALL PAIRS FOUND</h2>
+    <section id="lobby" class="mt-5 space-y-3">
+      <select id="pairs" class="min-h-11 w-full rounded-xl border border-sky-400/20 bg-black/30 px-3">
+        <option value="6">6 pairs</option>
+        <option value="8" selected>8 pairs</option>
+        <option value="10">10 pairs</option>
+      </select>
+      <button id="go" class="min-h-12 w-full rounded-xl bg-sky-400 font-semibold text-slate-950">Deal cards</button>
+    </section>
+    <section id="play" hidden>
+      <p class="mb-2 text-sm">Moves <span id="moves">0</span> · Matches <span id="pairsn">0</span> · Mistakes <span id="miss">0</span> · <span id="time">0</span>s</p>
+      <div id="grid" class="grid grid-cols-4 gap-2"></div>
+    </section>
+    <section id="result" hidden class="mt-6 rounded-2xl border border-sky-400/25 p-5">
+      <h2 class="text-xl font-semibold text-white">BOARD CLEAR</h2>
       <p id="rbody" class="mt-3 text-sm leading-7"></p>
       <div class="mt-4 flex flex-wrap gap-2">
-        <button id="again" class="min-h-11 rounded-xl bg-sky-400 px-4 py-2 font-semibold text-slate-950">Play Again</button>
-        <a href="/dashboard" class="min-h-11 inline-flex items-center rounded-xl border border-white/15 px-4 py-2">Back to Games</a>
+        <button id="again" class="min-h-11 rounded-xl bg-sky-400 px-4 font-semibold text-slate-950">Play Again</button>
+        <a href="/dashboard" class="min-h-11 inline-flex items-center rounded-xl border border-white/15 px-4">Back to Games</a>
       </div>
     </section>
   </main>
@@ -43,56 +45,59 @@
   <script>
     GameShell.mountChrome("MEMORY CHALLENGE");
     GameShell.guard();
-    const faces = [
-      ["A","#38bdf8"],["B","#a78bfa"],["C","#34d399"],["D","#fbbf24"],
-      ["E","#f472b6"],["F","#fb7185"],["G","#22d3ee"],["H","#c084fc"]
-    ];
-    function deal() {
-      const deck = [...faces, ...faces].sort(() => Math.random() - 0.5);
-      const grid = document.getElementById("grid");
-      grid.innerHTML = "";
-      document.getElementById("result").hidden = true;
-      document.getElementById("moves").textContent = "0";
-      document.getElementById("pairs").textContent = "0";
-      let first = null, lock = false, moves = 0, matched = 0;
-      deck.forEach(([letter, color]) => {
-        const wrap = document.createElement("button");
-        wrap.className = "card";
-        wrap.innerHTML = '<div class="face"><div class="back"><span class="h-3 w-3 rounded-full bg-sky-300/70"></span></div><div class="front" style="background:'+color+'22;color:'+color+'">'+letter+'</div></div>';
-        wrap.onclick = () => {
-          const face = wrap.querySelector(".face");
-          if (lock || wrap.dataset.done || face.classList.contains("up")) return;
+    const FACE=[["A","#38bdf8"],["B","#a78bfa"],["C","#34d399"],["D","#fbbf24"],["E","#f472b6"],["F","#fb7185"],["G","#22d3ee"],["H","#c084fc"],["I","#fb923c"],["J","#4ade80"]];
+    let timer, S;
+    window.__gaCleanup=()=>clearInterval(timer);
+    document.getElementById("go").onclick=deal;
+    document.getElementById("again").onclick=()=>{ document.getElementById("lobby").hidden=false; document.getElementById("result").hidden=true; document.getElementById("play").hidden=true; };
+    function deal(){
+      GameShell.resetSubmit();
+      clearInterval(timer);
+      const n=Number(document.getElementById("pairs").value);
+      const faces=FACE.slice(0,n);
+      const deck=[...faces,...faces].sort(()=>Math.random()-0.5);
+      S={moves:0,miss:0,matched:0,need:n,t:0,lock:false,first:null};
+      const grid=document.getElementById("grid");
+      grid.innerHTML="";
+      document.getElementById("lobby").hidden=true;
+      document.getElementById("result").hidden=true;
+      document.getElementById("play").hidden=false;
+      document.getElementById("moves").textContent=0;
+      document.getElementById("pairsn").textContent="0/"+n;
+      document.getElementById("miss").textContent=0;
+      timer=setInterval(()=>{ S.t+=1; document.getElementById("time").textContent=S.t; },1000);
+      deck.forEach(([letter,color])=>{
+        const wrap=document.createElement("button");
+        wrap.className="card";
+        wrap.innerHTML='<div class="face"><div class="back"><span class="h-3 w-3 rounded-full bg-sky-300/80"></span></div><div class="front" style="background:'+color+'22;color:'+color+'">'+letter+'</div></div>';
+        wrap.onclick=()=>{
+          const face=wrap.querySelector(".face");
+          if(S.lock || wrap.dataset.done || face.classList.contains("up")) return;
           face.classList.add("up");
-          if (!first) { first = wrap; return; }
-          moves += 1;
-          document.getElementById("moves").textContent = moves;
-          const a = first, b = wrap;
-          first = null;
-          if (a.querySelector(".front").textContent === b.querySelector(".front").textContent) {
-            a.dataset.done = b.dataset.done = "1";
-            a.classList.add("done"); b.classList.add("done");
-            matched += 1;
-            document.getElementById("pairs").textContent = matched;
-            if (matched === 8) {
-              const score = Math.max(10, 80 - moves);
-              document.getElementById("rbody").textContent = "Moves: " + moves + " · Score: " + score;
-              document.getElementById("result").hidden = false;
-              GameShell.submitRun("memory", score, 0, 0, { completed: true, stage: 1 });
-            }
+          if(!S.first){ S.first=wrap; return; }
+          S.moves+=1; document.getElementById("moves").textContent=S.moves;
+          const a=S.first,b=wrap; S.first=null;
+          if(a.querySelector(".front").textContent===b.querySelector(".front").textContent){
+            a.dataset.done=b.dataset.done="1"; a.classList.add("done"); b.classList.add("done");
+            S.matched+=1; document.getElementById("pairsn").textContent=S.matched+"/"+S.need;
+            if(S.matched===S.need) finish();
           } else {
-            lock = true;
-            setTimeout(() => {
-              a.querySelector(".face").classList.remove("up");
-              b.querySelector(".face").classList.remove("up");
-              lock = false;
-            }, 650);
+            S.miss+=1; document.getElementById("miss").textContent=S.miss;
+            S.lock=true;
+            setTimeout(()=>{ a.querySelector(".face").classList.remove("up"); b.querySelector(".face").classList.remove("up"); S.lock=false; },620);
           }
         };
         grid.appendChild(wrap);
       });
     }
-    document.getElementById("again").onclick = () => { GameShell.resetSubmit(); deal(); };
-    deal();
+    async function finish(){
+      clearInterval(timer);
+      const score=Math.max(10, 120 - S.moves*4 - S.t);
+      document.getElementById("play").hidden=true;
+      document.getElementById("result").hidden=false;
+      document.getElementById("rbody").textContent="Moves "+S.moves+" · Time "+S.t+"s · Mistakes "+S.miss+" · Score "+score;
+      await GameShell.submitRun("memory", score, 0, 0, { completed:true, stage:S.need, time:S.t, accuracy:Math.round(100*S.need/(S.need+S.miss)) });
+    }
   </script>
 </body>
 </html>
