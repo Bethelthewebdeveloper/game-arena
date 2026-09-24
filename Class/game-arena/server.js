@@ -67,8 +67,11 @@ const MIME = {
   ".json": "application/json; charset=utf-8",
   ".svg": "image/svg+xml",
   ".png": "image/png",
+  ".webp": "image/webp",
   ".ico": "image/x-icon",
-  ".txt": "text/plain; charset=utf-8"
+  ".txt": "text/plain; charset=utf-8",
+  ".webmanifest": "application/manifest+json",
+  ".woff2": "font/woff2"
 };
 
 const sessions = new Map();
@@ -425,7 +428,9 @@ ensureData();
 const PAGE_ROUTES = {
   "/login": "/login.html",
   "/signup": "/signup.html",
-  "/dashboard": "/dashboard.html"
+  "/dashboard": "/dashboard.html",
+  "/leaderboard": "/leaderboard.html",
+  "/offline": "/offline.html"
 };
 
 async function handleRequest(req, res) {
@@ -604,24 +609,75 @@ async function handleRequest(req, res) {
 
     if (method === "GET" && pathname === "/api/leaderboard") {
       const gameId = String(url.searchParams.get("game") || "");
-      const scores = readJson(SCORES_FILE);
-      const filtered = gameId ? scores.filter((s) => s.gameId === gameId) : scores;
-      const bestByPlayer = new Map();
-      for (const row of filtered) {
-        const key = row.userId + ":" + row.gameId;
-        const prev = bestByPlayer.get(key);
-        if (!prev || row.score > prev.score) bestByPlayer.set(key, row);
-      }
-      const entries = Array.from(bestByPlayer.values())
-        .sort((a, b) => b.score - a.score)
-        .slice(0, 10)
-        .map((row, i) => ({
+      const period = String(url.searchParams.get("period") || "all");
+      const scope = String(url.searchParams.get("scope") || "game");
+      const now = Date.now();
+      const cutoff = period === "week" ? now - 7 * 86400000 : period === "month" ? now - 30 * 86400000 : 0;
+      const viewerId = getSessionUserId(req);
+      const users = readJson(USERS_FILE);
+
+      if (scope === "global" && !gameId) {
+        const ranked = users
+          .map((u) => {
+            const stats = u.stats || {};
+            const plays = Object.values(stats).reduce((n, st) => n + (st && st.plays ? st.plays : 0), 0);
+            return {
+              userId: u.id,
+              username: u.username,
+              xp: u.xp || 0,
+              level: levelFromXp(u.xp),
+              plays,
+              coins: u.coins || 0
+            };
+          })
+          .filter((row) => row.xp > 0 || row.plays > 0)
+          .sort((a, b) => b.xp - a.xp || b.plays - a.plays);
+        const entries = ranked.slice(0, 25).map((row, i) => ({
           rank: i + 1,
           username: row.username,
-          gameId: row.gameId,
-          score: row.score
+          xp: row.xp,
+          level: row.level,
+          plays: row.plays
         }));
-      return sendJson(res, 200, { entries });
+        let you = null;
+        if (viewerId) {
+          const idx = ranked.findIndex((r) => r.userId === viewerId);
+          if (idx >= 0) you = { rank: idx + 1, username: ranked[idx].username, xp: ranked[idx].xp, level: ranked[idx].level, plays: ranked[idx].plays };
+        }
+        return sendJson(res, 200, { scope: "global", period, entries, you });
+      }
+
+      const scores = readJson(SCORES_FILE).filter((s) => {
+        if (gameId && s.gameId !== gameId) return false;
+        if (!cutoff) return true;
+        const t = Date.parse(s.createdAt);
+        return Number.isFinite(t) && t >= cutoff;
+      });
+      const bestByPlayer = new Map();
+      for (const row of scores) {
+        const key = row.userId + ":" + row.gameId;
+        const prev = bestByPlayer.get(key);
+        const betterScore = !prev || row.score > prev.score;
+        const betterTime = row.time != null && prev && prev.time != null && row.time < prev.time && row.score >= prev.score;
+        if (!prev || betterScore || betterTime) bestByPlayer.set(key, row);
+      }
+      const ranked = Array.from(bestByPlayer.values()).sort((a, b) => b.score - a.score || ((a.time || 9e9) - (b.time || 9e9)));
+      const entries = ranked.slice(0, 25).map((row, i) => ({
+        rank: i + 1,
+        username: row.username,
+        gameId: row.gameId,
+        score: row.score,
+        time: row.time == null ? null : row.time
+      }));
+      let you = null;
+      if (viewerId) {
+        const idx = ranked.findIndex((r) => r.userId === viewerId && (!gameId || r.gameId === gameId));
+        if (idx >= 0) {
+          const row = ranked[idx];
+          you = { rank: idx + 1, username: row.username, gameId: row.gameId, score: row.score, time: row.time == null ? null : row.time };
+        }
+      }
+      return sendJson(res, 200, { scope: "game", gameId, period, entries, you });
     }
 
     if (method === "GET" && PAGE_ROUTES[pathname]) {

@@ -3,6 +3,10 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#070b16" />
+  <link rel="manifest" href="/manifest.webmanifest" />
+  <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" />
+
   <title>Arena — Game Arena</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -20,6 +24,7 @@
       <div class="flex items-center gap-3 text-sm">
         <span data-username class="text-white"></span>
         <span data-user-level class="rounded-full border border-cyan-400/30 px-2 py-0.5 text-xs text-cyan-200"></span>
+        <a href="/leaderboard" class="rounded-lg border border-white/10 px-3 py-1.5 hover:bg-white/5">Ranks</a>
         <button id="logout" class="rounded-lg border border-white/10 px-3 py-1.5 hover:bg-white/5">Log out</button>
       </div>
     </div>

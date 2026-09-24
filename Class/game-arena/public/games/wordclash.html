@@ -11,33 +11,49 @@
     <p class="text-xs uppercase tracking-widest text-lime-300">Game Arena · Word Clash</p>
     <h1 class="mt-2 text-2xl font-semibold text-white">Unscramble the word</h1>
     <p class="mt-2 text-sm text-slate-400">Time: <span id="time">40</span>s · Score: <span id="score">0</span></p>
-    <p id="word" class="mt-8 font-mono text-4xl tracking-[0.3em] text-lime-200"></p>
+    <div id="tiles" class="mt-8 flex flex-wrap justify-center gap-2"></div>
     <form id="form" class="mt-6 flex gap-2">
       <input id="guess" class="flex-1 rounded-xl border border-white/10 bg-white/5 px-3 py-2 outline-none ring-lime-300 focus:ring-2" aria-label="Unscrambled word" />
       <button class="rounded-xl bg-lime-400 px-4 py-2 font-semibold text-slate-950">Solve</button>
     </form>
     <p id="msg" class="mt-3 text-sm text-slate-400"></p>
+    <section id="result" hidden class="mt-6 rounded-2xl border border-lime-400/20 p-5">
+      <h2 class="text-xl font-semibold text-white">WORD CLASH COMPLETE</h2>
+      <p id="rbody" class="mt-3 text-sm leading-7"></p>
+      <div class="mt-4 flex flex-wrap gap-2">
+        <button id="again" class="min-h-11 rounded-xl bg-lime-400 px-4 py-2 font-semibold text-slate-950">Play Again</button>
+        <a href="/dashboard" class="min-h-11 inline-flex items-center rounded-xl border border-white/15 px-4 py-2">Back to Games</a>
+      </div>
+    </section>
   </main>
   <script src="/js/arena.js"></script>
   <script src="/js/game-shell.js"></script>
   <script>
     GameShell.mountChrome("WORD CLASH");
     GameShell.guard();
+    document.getElementById("again").onclick = () => { GameShell.resetSubmit(); location.reload(); };
     const WORDS = ["arena", "level", "streak", "puzzle", "reflex", "memory", "trophy", "player"];
+        function showTiles(s) {
+      document.getElementById("tiles").innerHTML = s.split("").map((ch) =>
+        '<span class="grid h-12 w-12 place-items-center rounded-xl border border-lime-400/30 bg-lime-400/10 font-mono text-xl font-bold text-lime-100">' + ch.toUpperCase() + '</span>'
+      ).join("");
+    }
     function scramble(w) {
       let a = w.split("");
       do { a = a.sort(() => Math.random() - 0.5); } while (a.join("") === w);
       return a.join("");
     }
     let i = 0, score = 0, done = false;
-    document.getElementById("word").textContent = scramble(WORDS[i]);
+    showTiles(scramble(WORDS[i]));
     let t = 40;
     const timer = setInterval(async () => {
       t -= 1; document.getElementById("time").textContent = t;
       if (t <= 0 && !done) {
         done = true; clearInterval(timer);
         document.getElementById("msg").textContent = "Time up. Score " + score;
-        await GameShell.submitRun("wordclash", score, Math.min(30, score), Math.min(8, score / 10));
+        document.getElementById("rbody").textContent = "Score: " + score;
+        document.getElementById("result").hidden = false;
+        await GameShell.submitRun("wordclash", score, 0, 0, { completed: score >= 20, stage: 1 });
       }
     }, 1000);
     window.__gaCleanup = () => clearInterval(timer);
@@ -48,7 +64,7 @@
       if (g === WORDS[i]) {
         score += 10; i = (i + 1) % WORDS.length;
         document.getElementById("score").textContent = score;
-        document.getElementById("word").textContent = scramble(WORDS[i]);
+        showTiles(scramble(WORDS[i]));
         document.getElementById("guess").value = "";
         document.getElementById("msg").textContent = "Clean solve.";
       } else document.getElementById("msg").textContent = "Not that word.";

@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#070b16" />
+  <link rel="manifest" href="/manifest.webmanifest" />
+  <title>Leaderboards — Game Arena</title>
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700&family=Outfit:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>tailwind.config={theme:{extend:{fontFamily:{display:['Orbitron','sans-serif'],sans:['Outfit','system-ui','sans-serif']}}}}</script>
+</head>
+<body class="min-h-screen bg-[#070b16] font-sans text-slate-200 antialiased">
+  <header class="border-b border-white/10">
+    <div class="mx-auto flex max-w-4xl items-center justify-between px-4 py-3">
+      <a href="/dashboard" class="text-sm text-cyan-300">← Arena</a>
+      <p class="font-display text-xs tracking-wider text-white">LEADERBOARDS</p>
+      <a href="/" class="text-sm text-slate-400">Home</a>
+    </div>
+  </header>
+  <main class="mx-auto max-w-4xl px-4 py-8">
+    <h1 class="font-display text-3xl font-bold text-white">REAL RANKS</h1>
+    <p class="mt-2 text-sm text-slate-400">Only players who have actually played appear here. Empty boards stay empty.</p>
+    <div class="mt-6 flex flex-wrap gap-2">
+      <select id="scope" class="min-h-11 rounded-xl border border-white/10 bg-white/5 px-3">
+        <option value="global">All players (XP)</option>
+        <option value="riddle">Riddle Game</option>
+        <option value="reflex">Reflex Challenge</option>
+        <option value="memory">Memory Challenge</option>
+        <option value="penalty">Penalty Shootout</option>
+        <option value="rps">Rock Paper Scissors</option>
+        <option value="wordclash">Word Clash</option>
+        <option value="trivia">Trivia Rush</option>
+        <option value="minirace">Mini Race</option>
+        <option value="targetstrike">Target Strike</option>
+        <option value="patternmaster">Pattern Master</option>
+        <option value="numberrush">Number Rush</option>
+        <option value="codebreaker">Code Breaker</option>
+      </select>
+      <select id="period" class="min-h-11 rounded-xl border border-white/10 bg-white/5 px-3">
+        <option value="all">All time</option>
+        <option value="month">Last 30 days</option>
+        <option value="week">Last 7 days</option>
+      </select>
+    </div>
+    <div id="you" class="mt-4 hidden rounded-2xl border border-cyan-400/20 bg-cyan-400/5 p-4 text-sm"></div>
+    <div id="empty" class="mt-8 rounded-2xl border border-white/10 p-8 text-center text-sm text-slate-400">No ranked scores yet.</div>
+    <div class="mt-6 overflow-x-auto">
+      <table id="table" hidden class="w-full min-w-[280px] text-left text-sm">
+        <thead class="text-xs uppercase tracking-wider text-slate-400">
+          <tr id="head"></tr>
+        </thead>
+        <tbody id="body" class="divide-y divide-white/5"></tbody>
+      </table>
+    </div>
+  </main>
+  <script src="/js/arena.js"></script>
+  <script>
+    const scope = document.getElementById("scope");
+    const period = document.getElementById("period");
+    async function load() {
+      const game = scope.value;
+      const q = game === "global"
+        ? "/api/leaderboard?scope=global&period=" + period.value
+        : "/api/leaderboard?scope=game&game=" + encodeURIComponent(game) + "&period=" + period.value;
+      const res = await fetch(q, { credentials: "same-origin" });
+      const data = await res.json();
+      const entries = data.entries || [];
+      const youBox = document.getElementById("you");
+      if (data.you) {
+        youBox.hidden = false;
+        youBox.classList.remove("hidden");
+        youBox.textContent = "You: rank #" + data.you.rank + (data.you.xp != null ? " · " + data.you.xp + " XP · Lv " + data.you.level : "") + (data.you.score != null ? " · best " + data.you.score : "");
+      } else {
+        youBox.classList.add("hidden");
+      }
+      const empty = document.getElementById("empty");
+      const table = document.getElementById("table");
+      if (!entries.length) {
+        empty.hidden = false;
+        table.hidden = true;
+        empty.textContent = game === "global" ? "No player XP recorded yet." : "No scores for this board yet.";
+        return;
+      }
+      empty.hidden = true;
+      table.hidden = false;
+      const global = data.scope === "global";
+      document.getElementById("head").innerHTML = global
+        ? "<th class='py-2 pr-3'>Rank</th><th class='py-2 pr-3'>Player</th><th class='py-2 pr-3'>XP</th><th class='py-2 pr-3'>Level</th><th class='py-2'>Plays</th>"
+        : "<th class='py-2 pr-3'>Rank</th><th class='py-2 pr-3'>Player</th><th class='py-2 pr-3'>Score</th><th class='py-2'>Time</th>";
+      document.getElementById("body").innerHTML = entries.map((row) => global
+        ? "<tr><td class='py-3 text-cyan-300'>#"+row.rank+"</td><td class='py-3 text-white'>"+esc(row.username)+"</td><td class='py-3'>"+row.xp+"</td><td class='py-3'>Lv "+row.level+"</td><td class='py-3'>"+row.plays+"</td></tr>"
+        : "<tr><td class='py-3 text-cyan-300'>#"+row.rank+"</td><td class='py-3 text-white'>"+esc(row.username)+"</td><td class='py-3'>"+row.score+"</td><td class='py-3 text-slate-400'>"+(row.time==null?"—":Number(row.time).toFixed(2)+"s")+"</td></tr>"
+      ).join("");
+    }
+    function esc(s) { return String(s||"").replace(/[<>&]/g, ""); }
+    scope.onchange = load;
+    period.onchange = load;
+    load().catch(() => {});
+  </script>
+</body>
+</html>

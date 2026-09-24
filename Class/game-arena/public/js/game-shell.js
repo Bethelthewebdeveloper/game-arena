@@ -29,14 +29,18 @@
     }
   }
 
+  function resetSubmit() {
+    submitting = false;
+  }
+
   function mountChrome(title) {
     const header = document.createElement("header");
     header.className = "border-b border-white/10";
     header.innerHTML = `
       <div class="mx-auto flex max-w-3xl items-center justify-between px-4 py-3">
-        <a href="/dashboard" class="text-sm text-cyan-300 hover:underline">← Arena</a>
+        <a href="/dashboard" class="min-h-11 inline-flex items-center text-sm text-cyan-300 hover:underline">← Arena</a>
         <p class="font-display text-xs tracking-wider text-white">${title}</p>
-        <a href="/" class="text-sm text-slate-400 hover:text-white">Home</a>
+        <a href="/leaderboard" class="min-h-11 inline-flex items-center text-sm text-slate-400 hover:text-white">Ranks</a>
       </div>`;
     document.body.prepend(header);
   }
@@ -47,5 +51,5 @@
     }
   });
 
-  window.GameShell = { guard, submitRun, mountChrome };
+  window.GameShell = { guard, submitRun, resetSubmit, mountChrome };
 })();

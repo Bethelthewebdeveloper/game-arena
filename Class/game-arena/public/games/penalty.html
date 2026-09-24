@@ -1,53 +1,167 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" /><meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Penalty Shootout — Game Arena</title>
-  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700&display=swap" rel="stylesheet" />
   <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    .pitch {
+      background:
+        repeating-linear-gradient(90deg, #1a6b32 0 12%, #16602c 12% 24%),
+        #16602c;
+    }
+    .net {
+      background-image:
+        linear-gradient(rgba(255,255,255,.18) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,.18) 1px, transparent 1px);
+      background-size: 14px 14px;
+    }
+    .keeper {
+      position: absolute;
+      bottom: 18%;
+      left: 50%;
+      width: 28%;
+      max-width: 120px;
+      transform: translateX(-50%);
+      transform-origin: 50% 80%;
+      transition: transform .38s cubic-bezier(.2,.7,.2,1);
+      pointer-events: none;
+      user-select: none;
+      filter: drop-shadow(0 8px 10px rgba(0,0,0,.45));
+    }
+    .keeper.dive-left { transform: translateX(-145%) rotate(-18deg); }
+    .keeper.dive-center { transform: translateX(-50%) translateY(-6%) scale(1.04); }
+    .keeper.dive-right { transform: translateX(45%) rotate(18deg); }
+    .ball {
+      position: absolute;
+      width: 28px; height: 28px;
+      border-radius: 999px;
+      left: 50%;
+      bottom: 8%;
+      transform: translateX(-50%);
+      background:
+        radial-gradient(circle at 30% 30%, #fff 0 35%, #d6d6d6 36% 100%);
+      box-shadow: 0 4px 0 rgba(0,0,0,.25);
+      transition: left .42s ease, bottom .42s ease, transform .42s ease;
+      z-index: 4;
+    }
+    .ball.fly-left { left: 18%; bottom: 58%; transform: translateX(-50%) scale(.72) rotate(160deg); }
+    .ball.fly-center { left: 50%; bottom: 62%; transform: translateX(-50%) scale(.7) rotate(120deg); }
+    .ball.fly-right { left: 82%; bottom: 58%; transform: translateX(-50%) scale(.72) rotate(-160deg); }
+    .flash {
+      position: absolute; inset: 0; display: grid; place-items: center;
+      font-weight: 800; letter-spacing: .08em; pointer-events: none; z-index: 6;
+      text-shadow: 0 2px 16px rgba(0,0,0,.6);
+    }
+  </style>
 </head>
 <body class="min-h-screen bg-[#07140f] font-sans text-slate-200">
-  <main class="mx-auto max-w-xl px-4 py-10">
+  <main class="mx-auto max-w-xl px-4 py-6">
     <p class="text-xs uppercase tracking-widest text-emerald-300">Game Arena · Penalty Shootout</p>
-    <h1 class="mt-2 text-2xl font-semibold text-white">Pick your shot</h1>
-    <p class="mt-2 text-sm text-slate-400">Goals: <span id="goals">0</span> / 5</p>
-    <div class="relative mt-6 h-48 rounded-2xl border border-emerald-400/20 bg-emerald-950/40">
-      <div class="absolute inset-x-8 top-4 h-28 rounded-t-xl border-2 border-white/30"></div>
-      <p id="keeper" class="absolute top-10 text-3xl transition-all" style="left:45%">🧤</p>
+    <h1 class="mt-1 text-2xl font-semibold text-white">Five penalties</h1>
+    <p class="mt-1 text-sm text-slate-400">Shot <span id="shotn">1</span>/5 · Goals <span id="goals">0</span></p>
+
+    <div class="relative mt-4 overflow-hidden rounded-2xl border border-emerald-400/20 pitch" style="height:320px">
+      <div class="absolute inset-x-[8%] top-[6%] h-[58%] rounded-t-md border-x-4 border-t-4 border-white/80 net"></div>
+      <div class="absolute left-[8%] right-[8%] top-[6%] h-1 bg-white/90"></div>
+      <div class="absolute left-1/2 top-[62%] h-[38%] w-px -translate-x-1/2 bg-white/30"></div>
+      <div class="absolute bottom-[8%] left-1/2 h-16 w-40 -translate-x-1/2 rounded-t-full border border-white/25"></div>
+      <img id="keeper" class="keeper" src="/assets/goalkeeper.webp" alt="Goalkeeper" onerror="this.src='/assets/goalkeeper.png'" />
+      <div id="ball" class="ball" aria-hidden="true"></div>
+      <div id="flash" class="flash text-3xl text-white" hidden></div>
+      <button data-dir="left" class="absolute left-[8%] top-[10%] z-5 h-[52%] w-[28%] bg-transparent" aria-label="Shoot left"></button>
+      <button data-dir="center" class="absolute left-[36%] top-[10%] z-5 h-[52%] w-[28%] bg-transparent" aria-label="Shoot center"></button>
+      <button data-dir="right" class="absolute left-[64%] top-[10%] z-5 h-[52%] w-[28%] bg-transparent" aria-label="Shoot right"></button>
     </div>
-    <div class="mt-4 grid grid-cols-3 gap-2">
-      <button data-dir="left" class="rounded-xl bg-emerald-400/20 py-3">Left</button>
-      <button data-dir="center" class="rounded-xl bg-emerald-400/20 py-3">Center</button>
-      <button data-dir="right" class="rounded-xl bg-emerald-400/20 py-3">Right</button>
+    <div class="mt-3 grid grid-cols-3 gap-2">
+      <button data-dir="left" class="min-h-12 rounded-xl bg-emerald-400/20 font-semibold">Shoot left</button>
+      <button data-dir="center" class="min-h-12 rounded-xl bg-emerald-400/20 font-semibold">Center</button>
+      <button data-dir="right" class="min-h-12 rounded-xl bg-emerald-400/20 font-semibold">Shoot right</button>
     </div>
-    <p id="msg" class="mt-4 text-sm text-slate-400">Aim and shoot.</p>
+    <p id="msg" class="mt-3 text-sm text-slate-300">Tap a side of the goal to shoot.</p>
+    <section id="result" hidden class="mt-6 rounded-2xl border border-emerald-400/20 p-5">
+      <h2 class="text-xl font-semibold text-white">SHOOTOUT COMPLETE</h2>
+      <p id="rbody" class="mt-3 text-sm leading-7"></p>
+      <div class="mt-4 flex flex-wrap gap-2">
+        <button id="again" class="min-h-11 rounded-xl bg-emerald-400 px-4 py-2 font-semibold text-slate-950">Play Again</button>
+        <a href="/dashboard" class="min-h-11 inline-flex items-center rounded-xl border border-white/15 px-4 py-2">Back to Games</a>
+      </div>
+    </section>
   </main>
   <script src="/js/arena.js"></script>
   <script src="/js/game-shell.js"></script>
   <script>
     GameShell.mountChrome("PENALTY SHOOTOUT");
     GameShell.guard();
+    const keeper = document.getElementById("keeper");
+    const ball = document.getElementById("ball");
+    const flash = document.getElementById("flash");
     let shot = 0, goals = 0, busy = false;
     const dirs = ["left", "center", "right"];
-    const pos = { left: "18%", center: "45%", right: "72%" };
+
+    function resetPitch() {
+      keeper.className = "keeper";
+      ball.className = "ball";
+      flash.hidden = true;
+    }
+
+    function showFlash(text, color) {
+      flash.hidden = false;
+      flash.textContent = text;
+      flash.style.color = color;
+    }
+
+    document.getElementById("again").onclick = () => {
+      GameShell.resetSubmit();
+      shot = 0; goals = 0; busy = false;
+      document.getElementById("goals").textContent = "0";
+      document.getElementById("shotn").textContent = "1";
+      document.getElementById("msg").textContent = "Tap a side of the goal to shoot.";
+      document.getElementById("result").hidden = true;
+      resetPitch();
+    };
+
     document.querySelectorAll("[data-dir]").forEach((btn) => {
-      btn.onclick = async () => {
-        if (busy || shot >= 5) return;
-        busy = true;
-        const dive = dirs[Math.floor(Math.random() * 3)];
-        document.getElementById("keeper").style.left = pos[dive];
-        const goal = btn.dataset.dir !== dive;
-        if (goal) goals += 1;
-        shot += 1;
-        document.getElementById("goals").textContent = goals;
-        document.getElementById("msg").textContent = goal ? "Goal!" : "Saved!";
-        if (shot >= 5) {
-          document.getElementById("msg").textContent = "Final: " + goals + " / 5";
-          await GameShell.submitRun("penalty", goals, goals * 6, goals);
-        }
-        busy = false;
-      };
+      btn.onclick = () => shoot(btn.dataset.dir);
     });
+
+    async function shoot(aim) {
+      if (busy || shot >= 5) return;
+      busy = true;
+      resetPitch();
+      const dive = dirs[Math.floor(Math.random() * 3)];
+      requestAnimationFrame(() => {
+        keeper.classList.add("dive-" + dive);
+        ball.classList.add("fly-" + aim);
+      });
+      await new Promise((r) => setTimeout(r, 430));
+      const saved = aim === dive;
+      const wide = !saved && Math.random() < 0.08;
+      let outcome = "GOAL";
+      if (saved) outcome = "SAVE";
+      else if (wide) outcome = "MISS";
+      if (outcome === "GOAL") goals += 1;
+      shot += 1;
+      document.getElementById("goals").textContent = goals;
+      document.getElementById("shotn").textContent = Math.min(5, shot + 1);
+      document.getElementById("msg").textContent =
+        outcome === "GOAL" ? "Goal! The keeper dove " + dive + "." :
+        outcome === "SAVE" ? "Saved! The keeper read the shot." :
+        "Just wide of the post.";
+      showFlash(outcome, outcome === "GOAL" ? "#86efac" : outcome === "SAVE" ? "#fda4af" : "#fde68a");
+      if (shot >= 5) {
+        document.getElementById("rbody").textContent = "Goals: " + goals + " / 5";
+        document.getElementById("result").hidden = false;
+        document.getElementById("shotn").textContent = "5";
+        await GameShell.submitRun("penalty", goals, 0, 0, { completed: goals >= 3, stage: 1 });
+      } else {
+        setTimeout(() => { resetPitch(); busy = false; }, 700);
+        return;
+      }
+      busy = false;
+    }
   </script>
 </body>
 </html>
