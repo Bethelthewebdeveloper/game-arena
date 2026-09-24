@@ -14,7 +14,7 @@
   <header class="border-b border-white/10">
     <div class="mx-auto flex max-w-6xl items-center justify-between px-4 py-3">
       <a href="/" class="inline-flex items-center gap-2">
-        <span class="grid h-9 w-9 place-items-center rounded-xl bg-gradient-to-br from-cyan-400 to-violet-500 text-slate-950">▲</span>
+        <span class="grid h-9 w-9 place-items-center rounded-xl bg-gradient-to-br from-cyan-400 to-violet-500 text-slate-950"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M4 16l8-12 8 12H4z"/></svg></span>
         <span class="font-display text-sm font-bold tracking-wider text-white">GAME ARENA</span>
       </a>
       <div class="flex items-center gap-3 text-sm">
@@ -29,38 +29,42 @@
     <p class="mt-2 text-slate-400">Pick a game and keep building your shared progression.</p>
     <section class="mt-8 grid gap-4 sm:grid-cols-3">
       <div class="rounded-2xl border border-white/10 p-4">
-        <p class="text-xs uppercase tracking-wide text-slate-400">Level</p>
+        <p class="flex items-center gap-1.5 text-xs uppercase tracking-wide text-slate-400"><span data-icon="badge" class="inline-flex text-cyan-300"></span>Level</p>
         <p id="stat-level" class="mt-1 text-2xl font-semibold text-white">—</p>
       </div>
       <div class="rounded-2xl border border-white/10 p-4">
-        <p class="text-xs uppercase tracking-wide text-slate-400">XP</p>
+        <p class="flex items-center gap-1.5 text-xs uppercase tracking-wide text-slate-400"><span data-icon="spark" class="inline-flex text-violet-300"></span>XP</p>
         <p id="stat-xp" class="mt-1 text-2xl font-semibold text-white">—</p>
         <div class="mt-2 h-1.5 overflow-hidden rounded-full bg-white/10">
           <div id="xp-bar" class="h-full w-0 bg-gradient-to-r from-cyan-400 to-violet-500"></div>
         </div>
       </div>
       <div class="rounded-2xl border border-white/10 p-4">
-        <p class="text-xs uppercase tracking-wide text-slate-400">Coins</p>
+        <p class="flex items-center gap-1.5 text-xs uppercase tracking-wide text-slate-400"><span data-icon="coin" class="inline-flex text-amber-300"></span>Coins</p>
         <p id="stat-coins" class="mt-1 text-2xl font-semibold text-white">—</p>
       </div>
     </section>
     <section class="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-3" id="games"></section>
   </main>
+  <script src="/js/icons.js"></script>
   <script src="/js/arena.js"></script>
   <script>
+    document.querySelectorAll("[data-icon]").forEach((el) => {
+      el.innerHTML = Icons.svg(el.dataset.icon, "h-3.5 w-3.5");
+    });
     const cards = [
-      ["riddle", "🧩", "Riddle Game", "Solve timed riddles."],
-      ["reflex", "⚡", "Reflex Challenge", "Hit targets as they appear."],
-      ["memory", "🧠", "Memory Challenge", "Match pairs under pressure."],
-      ["penalty", "⚽", "Penalty Shootout", "Beat the keeper."],
-      ["rps", "✊", "Rock Paper Scissors", "Win the series."],
-      ["wordclash", "🔤", "Word Clash", "Unscramble before time ends."],
-      ["trivia", "❓", "Trivia Rush", "Answer and keep the streak."],
-      ["minirace", "🏎️", "Mini Race", "Steer, dodge and finish the track."],
-      ["targetstrike", "🎯", "Target Strike", "Hit moving targets under time."],
-      ["patternmaster", "🧩", "Pattern Master", "Watch the pattern, then rebuild it."],
-      ["numberrush", "🔢", "Number Rush", "Solve number challenges against the clock."],
-      ["codebreaker", "🔐", "Code Breaker", "Crack the hidden code with clues."],
+      ["riddle", "puzzle", "Riddle Game", "Solve timed riddles."],
+      ["reflex", "bolt", "Reflex Challenge", "Hit targets as they appear."],
+      ["memory", "brain", "Memory Challenge", "Match pairs under pressure."],
+      ["penalty", "ball", "Penalty Shootout", "Beat the keeper."],
+      ["rps", "hand", "Rock Paper Scissors", "Win the series."],
+      ["wordclash", "type", "Word Clash", "Unscramble before time ends."],
+      ["trivia", "help", "Trivia Rush", "Answer and keep the streak."],
+      ["minirace", "car", "Mini Race", "Steer, dodge and finish the track."],
+      ["targetstrike", "target", "Target Strike", "Hit moving targets under time."],
+      ["patternmaster", "grid", "Pattern Master", "Watch the pattern, then rebuild it."],
+      ["numberrush", "calc", "Number Rush", "Solve number challenges against the clock."],
+      ["codebreaker", "lock", "Code Breaker", "Crack the hidden code with clues."],
     ];
 
     Arena.getMe().then((user) => {
@@ -82,7 +86,7 @@
         const extra = st.bestTime != null ? " · Best time " + Number(st.bestTime).toFixed(2) + "s" : "";
         return `
       <article class="rounded-2xl border border-white/10 bg-white/[0.03] p-5">
-        <div class="text-2xl">${icon}</div>
+        <div class="grid h-11 w-11 place-items-center rounded-xl bg-cyan-400/10 text-cyan-200">${Icons.svg(icon, "h-5 w-5")}</div>
         <h2 class="mt-3 font-semibold text-white">${name}</h2>
         <p class="mt-1 text-sm text-slate-400">${desc}</p>
         <p class="mt-2 text-xs text-slate-500">Stage ${stage} · Best ${best}${extra}</p>
