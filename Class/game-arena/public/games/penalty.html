@@ -17,6 +17,35 @@
     .ball.fly-center{left:50%;bottom:62%;transform:translateX(-50%) scale(.7) rotate(120deg)}
     .ball.fly-right{left:82%;bottom:58%;transform:translateX(-50%) scale(.72) rotate(-160deg)}
     .flash{position:absolute;inset:0;display:grid;place-items:center;font-weight:800;letter-spacing:.08em;pointer-events:none;z-index:6;text-shadow:0 2px 16px rgba(0,0,0,.6)}
+    .arena-select {
+      appearance: none;
+      -webkit-appearance: none;
+      width: 100%;
+      min-height: 48px;
+      padding: 0.75rem 2.75rem 0.75rem 1rem;
+      border-radius: 0.75rem;
+      border: 1px solid rgba(52, 211, 153, 0.28);
+      background-color: #0b1a14;
+      background-image:
+        linear-gradient(45deg, transparent 50%, #6ee7b7 50%),
+        linear-gradient(135deg, #6ee7b7 50%, transparent 50%);
+      background-position:
+        calc(100% - 18px) calc(50% - 3px),
+        calc(100% - 12px) calc(50% - 3px);
+      background-size: 6px 6px, 6px 6px;
+      background-repeat: no-repeat;
+      color: #ecfdf5;
+      font-size: 0.95rem;
+      line-height: 1.3;
+    }
+    .arena-select:focus {
+      outline: 2px solid #34d399;
+      outline-offset: 2px;
+    }
+    .arena-select option {
+      background: #0b1a14;
+      color: #ecfdf5;
+    }
   </style>
 </head>
 <body class="min-h-screen bg-[#07140f] font-sans text-slate-200">
@@ -24,13 +53,15 @@
     <p class="text-xs uppercase tracking-widest text-emerald-300">Game Arena · Penalty Shootout</p>
     <h1 class="mt-1 text-2xl font-semibold text-white">Take the kick</h1>
     <section id="lobby" class="mt-5 space-y-3">
-      <select id="mode" class="min-h-11 w-full rounded-xl border border-emerald-400/20 bg-black/30 px-3">
+      <label class="block text-sm text-emerald-100/80">Mode
+        <select id="mode" class="arena-select mt-1">
         <option value="five">5-Shot Shootout</option>
         <option value="quick">Quick Penalty</option>
         <option value="sudden">Sudden Death</option>
         <option value="career">Career — 5 shots, need 3</option>
         <option value="challenge">Challenge — keeper reads you more</option>
       </select>
+      </label>
       <button id="go" class="min-h-12 w-full rounded-xl bg-emerald-400 font-semibold text-slate-950">Walk to the spot</button>
     </section>
     <section id="play" hidden>
