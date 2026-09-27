@@ -300,6 +300,15 @@
             <p class="mt-2 text-sm leading-relaxed text-slate-400">Guess the hidden code. Each attempt returns real position and digit clues.</p>
             <button type="button" class="focus-ring mt-5 w-full rounded-lg bg-indigo-400/15 px-4 py-2.5 text-sm font-semibold text-indigo-100 hover:bg-indigo-400/25" onclick="Arena.goPlay('codebreaker')">PLAY NOW</button>
           </article>
+          <article class="game-card rounded-2xl border border-emerald-400/25 bg-[#0c1610] p-5">
+            <div class="flex items-start justify-between">
+              <div class="grid h-12 w-12 place-items-center rounded-xl bg-emerald-400/15 text-emerald-200" data-icon="ball" aria-hidden="true"></div>
+              <span class="rounded-full border border-emerald-400/20 px-2 py-0.5 text-[11px] uppercase tracking-wide text-emerald-200">Medium</span>
+            </div>
+            <h3 class="mt-4 text-lg font-semibold text-white">Mini Football</h3>
+            <p class="mt-2 text-sm leading-relaxed text-slate-400">Play a short 3v3 match. Pass, dribble, sprint, tackle and shoot to win.</p>
+            <button type="button" class="focus-ring mt-5 w-full rounded-lg bg-emerald-400/15 px-4 py-2.5 text-sm font-semibold text-emerald-100 hover:bg-emerald-400/25" onclick="Arena.goPlay('minifootball')">PLAY NOW</button>
+          </article>
         </div>
       </div>
     </section>
@@ -527,6 +536,7 @@
       patternmaster: "Pattern Master",
       numberrush: "Number Rush",
       codebreaker: "Code Breaker",
+      minifootball: "Mini Football",
     };
 
     fetch("/api/leaderboard")

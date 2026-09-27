@@ -1,0 +1,586 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Mini Football — Game Arena</title>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700&display=swap" rel="stylesheet" />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    canvas { touch-action: none; display: block; width: 100%; background: #0a3d1e; }
+    .pad { min-height: 48px; touch-action: manipulation; }
+    .stick-base { width: 112px; height: 112px; border-radius: 999px; background: rgba(255,255,255,.08); border: 1px solid rgba(255,255,255,.18); position: relative; }
+    .stick-knob { width: 46px; height: 46px; border-radius: 999px; background: #34d399; position: absolute; left: 33px; top: 33px; pointer-events: none; }
+  </style>
+</head>
+<body class="min-h-screen bg-[#07140f] font-sans text-slate-200">
+  <main class="mx-auto max-w-xl px-3 py-4">
+    <p class="text-xs uppercase tracking-widest text-emerald-300">Game Arena · Mini Football</p>
+    <h1 class="mt-1 text-2xl font-semibold text-white">3v3 Mini Match</h1>
+
+    <section id="lobby" class="mt-4 space-y-3">
+      <label class="block text-sm">Mode
+        <select id="mode" class="mt-1 w-full min-h-12 rounded-xl border border-emerald-400/25 bg-[#0b1a14] px-3">
+          <option value="quick">Quick Match</option>
+          <option value="time-attack">Time Attack</option>
+          <option value="challenge">Challenge</option>
+          <option value="tournament">Tournament</option>
+          <option value="career">Career</option>
+        </select>
+      </label>
+      <label class="block text-sm">Stage
+        <input id="stage" type="number" min="1" max="50" value="1" class="mt-1 w-full min-h-12 rounded-xl border border-emerald-400/25 bg-[#0b1a14] px-3" />
+      </label>
+      <p id="obj" class="text-sm text-emerald-100/80">Score more than the opponent in 2 minutes.</p>
+      <p id="best" class="text-xs text-slate-500"></p>
+      <button id="start" class="w-full min-h-12 rounded-xl bg-emerald-400 font-semibold text-slate-950">Kick off</button>
+    </section>
+
+    <section id="play" hidden>
+      <div class="mb-2 flex items-center justify-between text-sm">
+        <span id="board" class="font-semibold text-white">YOU 0 — 0 OPP</span>
+        <span id="clock">2:00</span>
+        <span id="stam">STA 100</span>
+      </div>
+      <p id="objplay" class="mb-2 text-xs text-emerald-200/80"></p>
+      <div class="relative">
+        <canvas id="cv" width="360" height="560" class="rounded-2xl border border-emerald-400/20"></canvas>
+        <div id="flash" class="pointer-events-none absolute inset-0 grid place-items-center font-bold text-3xl text-white" hidden></div>
+        <div id="count" class="pointer-events-none absolute inset-0 grid place-items-center text-6xl font-bold text-emerald-100"></div>
+      </div>
+      <div class="mt-3 grid grid-cols-[auto_1fr] items-end gap-3">
+        <div id="joy" class="stick-base" aria-label="Move joystick"><div id="knob" class="stick-knob"></div></div>
+        <div class="grid grid-cols-3 gap-2">
+          <button class="pad rounded-xl bg-white/10 text-xs font-semibold" data-act="pass">PASS</button>
+          <button class="pad rounded-xl bg-emerald-400 text-xs font-semibold text-slate-950" data-act="shoot">SHOOT</button>
+          <button class="pad rounded-xl bg-white/10 text-xs font-semibold" data-act="switch">SWITCH</button>
+          <button class="pad rounded-xl bg-white/10 text-xs font-semibold" data-act="dribble">DRIBBLE</button>
+          <button class="pad rounded-xl bg-amber-400/80 text-xs font-semibold text-slate-950" data-act="sprint">SPRINT</button>
+          <button class="pad rounded-xl bg-white/10 text-xs font-semibold" data-act="tackle">TACKLE</button>
+        </div>
+      </div>
+    </section>
+
+    <section id="result" hidden class="mt-5 rounded-2xl border border-emerald-400/25 p-5">
+      <h2 id="rtitle" class="text-xl font-semibold text-white">MATCH COMPLETE</h2>
+      <p id="rbody" class="mt-3 text-sm leading-7"></p>
+      <p id="rerr" class="mt-2 hidden text-sm text-rose-300"></p>
+      <div class="mt-4 flex flex-wrap gap-2">
+        <button id="again" class="min-h-11 rounded-xl bg-emerald-400 px-4 font-semibold text-slate-950">Play Again</button>
+        <button id="next" class="min-h-11 rounded-xl border border-white/15 px-4">Continue</button>
+        <a href="/dashboard" class="min-h-11 inline-flex items-center rounded-xl border border-white/15 px-4">Back to Games</a>
+      </div>
+    </section>
+  </main>
+  <script src="/js/arena.js"></script>
+  <script src="/js/game-shell.js"></script>
+  <script>
+    GameShell.mountChrome("MINI FOOTBALL");
+    const cv = document.getElementById("cv");
+    const ctx = cv.getContext("2d");
+    const W = 360, H = 560;
+    const GOAL_W = 92, GOAL_D = 18;
+    let raf, S;
+
+    function objective(stage, mode) {
+      const n = ((stage - 1) % 10) + 1;
+      const map = {
+        1: "Score 1 goal.",
+        2: "Win the match.",
+        3: "Score 2 goals.",
+        4: "Complete 5 successful passes.",
+        5: "Dribble past 3 defenders.",
+        6: "Score without conceding.",
+        7: "Score within 30 seconds.",
+        8: "Make 3 successful tackles.",
+        9: "Come back from 1 goal behind.",
+        10: "Win by 2 goals."
+      };
+      if (mode === "time-attack") return "Score as many goals as you can.";
+      if (mode === "quick") return "Win a 2-minute 3v3 match.";
+      return map[n];
+    }
+    function objectiveMet(st, mode) {
+      const n = ((st.stage - 1) % 10) + 1;
+      if (mode === "time-attack") return st.you > 0;
+      if (mode === "quick" || mode === "tournament" || mode === "career") {
+        if (n === 1) return st.you >= 1;
+        if (n === 2) return st.you > st.opp;
+        if (n === 3) return st.you >= 2;
+        if (n === 4) return st.passes >= 5;
+        if (n === 5) return st.dribbles >= 3;
+        if (n === 6) return st.you >= 1 && st.opp === 0;
+        if (n === 7) return st.fastestGoal && st.fastestGoal <= 30;
+        if (n === 8) return st.tackles >= 3;
+        if (n === 9) return st.wasBehind && st.you > st.opp;
+        if (n === 10) return st.you >= st.opp + 2;
+        return st.you > st.opp;
+      }
+      return st.you > st.opp;
+    }
+
+    GameShell.guard().then((u) => {
+      if (!u) return;
+      const st = (u.stats && u.stats.minifootball) || {};
+      document.getElementById("stage").value = st.stage || 1;
+      document.getElementById("best").textContent = st.best == null ? "" : "Best score " + st.best;
+    });
+    document.getElementById("mode").onchange = () => {
+      document.getElementById("obj").textContent = objective(Number(document.getElementById("stage").value) || 1, document.getElementById("mode").value);
+    };
+    document.getElementById("stage").oninput = document.getElementById("mode").onchange;
+    document.getElementById("start").onclick = kickoff;
+    document.getElementById("again").onclick = () => { stopLoop(); document.getElementById("result").hidden = true; document.getElementById("play").hidden = true; document.getElementById("lobby").hidden = false; };
+    document.getElementById("next").onclick = () => {
+      const el = document.getElementById("stage");
+      el.value = Math.min(50, (Number(el.value) || 1) + 1);
+      document.getElementById("again").click();
+    };
+
+    const keys = {};
+    window.addEventListener("keydown", (e) => { keys[e.key.toLowerCase()] = true; if (["arrowup","arrowdown","arrowleft","arrowright"," "].includes(e.key.toLowerCase())) e.preventDefault(); });
+    window.addEventListener("keyup", (e) => { keys[e.key.toLowerCase()] = false; });
+    window.addEventListener("keydown", (e) => {
+      if (!S || S.phase !== "play") return;
+      if (e.key === "j" || e.key === "J") doPass();
+      if (e.key === "k" || e.key === "K" || e.key === " ") doShoot();
+      if (e.key === "l" || e.key === "L") doTackle();
+      if (e.key === "i" || e.key === "I") S.dribble = true;
+      if (e.key === "u" || e.key === "U") switchPlayer();
+    });
+    window.addEventListener("keyup", (e) => {
+      if (e.key === "i" || e.key === "I") S.dribble = false;
+      if (e.key === "Shift") S.sprint = false;
+    });
+    window.addEventListener("keydown", (e) => { if (e.key === "Shift") S && (S.sprint = true); });
+
+    const hold = { dribble: false, sprint: false };
+    document.querySelectorAll("[data-act]").forEach((btn) => {
+      const act = btn.dataset.act;
+      const down = (e) => {
+        e.preventDefault();
+        if (act === "pass") doPass();
+        if (act === "shoot") doShoot();
+        if (act === "tackle") doTackle();
+        if (act === "switch") switchPlayer();
+        if (act === "dribble") { hold.dribble = true; if (S) S.dribble = true; }
+        if (act === "sprint") { hold.sprint = true; if (S) S.sprint = true; }
+      };
+      const up = () => {
+        if (act === "dribble") { hold.dribble = false; if (S) S.dribble = false; }
+        if (act === "sprint") { hold.sprint = false; if (S) S.sprint = false; }
+      };
+      btn.addEventListener("pointerdown", down);
+      btn.addEventListener("pointerup", up);
+      btn.addEventListener("pointerleave", up);
+    });
+
+    const joy = document.getElementById("joy");
+    const knob = document.getElementById("knob");
+    let joyVec = { x: 0, y: 0 }, joyOn = false;
+    function joyFrom(e) {
+      const r = joy.getBoundingClientRect();
+      const cx = r.left + r.width / 2, cy = r.top + r.height / 2;
+      const t = e.touches ? e.touches[0] : e;
+      let x = (t.clientX - cx) / 42, y = (t.clientY - cy) / 42;
+      const m = Math.hypot(x, y) || 1;
+      if (m > 1) { x /= m; y /= m; }
+      joyVec = { x, y };
+      knob.style.left = 33 + x * 28 + "px";
+      knob.style.top = 33 + y * 28 + "px";
+    }
+    function joyEnd() { joyOn = false; joyVec = { x: 0, y: 0 }; knob.style.left = "33px"; knob.style.top = "33px"; }
+    joy.addEventListener("pointerdown", (e) => { joyOn = true; joy.setPointerCapture(e.pointerId); joyFrom(e); });
+    joy.addEventListener("pointermove", (e) => { if (joyOn) joyFrom(e); });
+    joy.addEventListener("pointerup", joyEnd);
+    joy.addEventListener("pointercancel", joyEnd);
+
+    function beep(f, ms) {
+      try {
+        const ac = beep.ac || (beep.ac = new (window.AudioContext || window.webkitAudioContext)());
+        const o = ac.createOscillator(), g = ac.createGain();
+        o.frequency.value = f; o.type = "square";
+        g.gain.value = 0.04; o.connect(g); g.connect(ac.destination);
+        o.start(); setTimeout(() => o.stop(), ms || 90);
+      } catch {}
+    }
+
+    function player(team, gk, x, y) {
+      return { team, gk, x, y, vx: 0, vy: 0, r: gk ? 11 : 10 };
+    }
+    function resetPositions() {
+      S.players = [
+        player(0, true, W/2, H - 36),
+        player(0, false, W/2 - 40, H - 150),
+        player(0, false, W/2 + 40, H - 150),
+        player(1, true, W/2, 36),
+        player(1, false, W/2 - 40, 150),
+        player(1, false, W/2 + 40, 150)
+      ];
+      S.ctrl = 1;
+      S.ball = { x: W/2, y: H/2, vx: 0, vy: 0, owner: null };
+    }
+
+    function kickoff() {
+      GameShell.resetSubmit();
+      stopLoop();
+      const stage = Math.max(1, Math.min(50, Number(document.getElementById("stage").value) || 1));
+      const mode = document.getElementById("mode").value;
+      S = {
+        stage, mode, phase: "count", count: 3,
+        you: 0, opp: 0, left: mode === "time-attack" ? 90 : 120,
+        stamina: 100, dribble: false, sprint: false,
+        passes: 0, dribbles: 0, tackles: 0, shots: 0, assists: 0,
+        lastPasser: null, lastGoalAt: -1, fastestGoal: null,
+        wasBehind: false, lockGoal: false, tackleCd: 0,
+        diff: 0.55 + stage * 0.012
+      };
+      resetPositions();
+      document.getElementById("lobby").hidden = true;
+      document.getElementById("result").hidden = true;
+      document.getElementById("play").hidden = false;
+      document.getElementById("objplay").textContent = "Stage " + stage + " · " + objective(stage, mode);
+      document.getElementById("flash").hidden = true;
+      let n = 3;
+      document.getElementById("count").textContent = "3";
+      beep(440, 80);
+      const id = setInterval(() => {
+        n -= 1;
+        document.getElementById("count").textContent = n > 0 ? String(n) : "GO!";
+        beep(n > 0 ? 440 : 720, 80);
+        if (n < 0) {
+          clearInterval(id);
+          document.getElementById("count").textContent = "";
+          S.phase = "play";
+          S.started = performance.now();
+          S.lastTick = S.started;
+          loop();
+        }
+      }, 700);
+    }
+
+    function stopLoop() { if (raf) cancelAnimationFrame(raf); raf = null; }
+    window.__gaCleanup = stopLoop;
+
+    function controlled() { return S.players[S.ctrl]; }
+    function teammates(team) { return S.players.filter((p) => p.team === team); }
+    function dist(a, b) { return Math.hypot(a.x - b.x, a.y - b.y); }
+
+    function inputVec() {
+      let x = joyVec.x, y = joyVec.y;
+      if (keys["a"] || keys["arrowleft"]) x -= 1;
+      if (keys["d"] || keys["arrowright"]) x += 1;
+      if (keys["w"] || keys["arrowup"]) y -= 1;
+      if (keys["s"] || keys["arrowdown"]) y += 1;
+      const m = Math.hypot(x, y);
+      if (m > 1) { x /= m; y /= m; }
+      return { x, y };
+    }
+
+    function attachBall(p) {
+      const faceY = p.team === 0 ? -1 : 1;
+      const close = S.dribble && p === controlled() && S.ball.owner === p;
+      const off = close ? 11 : 14;
+      S.ball.x = p.x;
+      S.ball.y = p.y + faceY * off;
+      S.ball.vx = 0; S.ball.vy = 0;
+      S.ball.owner = p;
+    }
+
+    function release(p, vx, vy) {
+      S.ball.owner = null;
+      S.ball.x = p.x;
+      S.ball.y = p.y + (p.team === 0 ? -16 : 16);
+      S.ball.vx = vx; S.ball.vy = vy;
+    }
+
+    function doPass() {
+      if (!S || S.phase !== "play") return;
+      const me = controlled();
+      if (S.ball.owner !== me) return;
+      const mates = teammates(0).filter((p) => p !== me);
+      mates.sort((a, b) => dist(me, a) - dist(me, b));
+      const t = mates[0];
+      if (!t) return;
+      const dx = t.x - me.x, dy = t.y - me.y, d = Math.hypot(dx, dy) || 1;
+      release(me, dx / d * 4.2, dy / d * 4.2);
+      S.lastPasser = me;
+      S.pendingPass = true;
+      beep(520, 70);
+    }
+    function doShoot() {
+      if (!S || S.phase !== "play") return;
+      const me = controlled();
+      if (S.ball.owner !== me) return;
+      const power = 5.2 + (S.sprint ? 0.8 : 0);
+      const aimX = (W / 2 - me.x) * 0.15;
+      release(me, aimX * 0.08, -power);
+      S.shots += 1;
+      S.lastPasser = null;
+      beep(280, 110);
+    }
+    function doTackle() {
+      if (!S || S.phase !== "play" || S.tackleCd > 0) return;
+      const me = controlled();
+      S.tackleCd = 0.7;
+      const owner = S.ball.owner;
+      if (owner && owner.team === 1 && dist(me, owner) < 22) {
+        if (Math.random() < 0.55) {
+          S.ball.owner = me;
+          S.tackles += 1;
+          flash("TACKLE!");
+          beep(180, 90);
+        }
+      }
+    }
+    function switchPlayer() {
+      if (!S) return;
+      const withBall = S.players.find((p) => p.team === 0 && !p.gk && S.ball.owner === p);
+      if (withBall) { S.ctrl = S.players.indexOf(withBall); return; }
+      const outs = S.players.map((p, i) => ({ p, i })).filter((x) => x.p.team === 0 && !x.p.gk);
+      const cur = outs.findIndex((x) => x.i === S.ctrl);
+      S.ctrl = outs[(cur + 1) % outs.length].i;
+    }
+
+    function flash(text) {
+      const el = document.getElementById("flash");
+      el.hidden = false; el.textContent = text;
+      clearTimeout(flash.t);
+      flash.t = setTimeout(() => { el.hidden = true; }, 700);
+    }
+
+    function inYourGoal(b) {
+      return b.y > H - 22 && Math.abs(b.x - W / 2) < GOAL_W / 2;
+    }
+    function inOppGoal(b) {
+      return b.y < 22 && Math.abs(b.x - W / 2) < GOAL_W / 2;
+    }
+
+    function scoreGoal(forYou) {
+      if (S.lockGoal || S.phase !== "play") return;
+      S.lockGoal = true;
+      S.phase = "goal";
+      if (forYou) {
+        S.you += 1;
+        const t = 120 - S.left;
+        if (S.fastestGoal == null) S.fastestGoal = t;
+        if (S.lastPasser && S.lastPasser.team === 0) S.assists += 1;
+        flash("GOAL!");
+        beep(880, 160);
+      } else {
+        S.opp += 1;
+        if (S.you < S.opp) S.wasBehind = true;
+        flash("THEY SCORE");
+        beep(160, 180);
+      }
+      setTimeout(() => {
+        resetPositions();
+        S.lockGoal = false;
+        if (S.left > 0) S.phase = "play";
+      }, 900);
+    }
+
+    function aiThink(p, dt) {
+      if (p === controlled()) return;
+      const ball = S.ball;
+      const diff = S.diff;
+      let tx = p.x, ty = p.y;
+      if (p.gk) {
+        tx = Math.max(W/2 - 40, Math.min(W/2 + 40, ball.x));
+        ty = p.team === 0 ? H - 34 : 34;
+        if (ball.owner == null && Math.abs(ball.y - ty) < 50 && Math.abs(ball.x - tx) < 50) {
+          tx = ball.x; ty = ball.y;
+        }
+      } else if (ball.owner === p) {
+        ty = p.team === 0 ? p.y - 40 : p.y + 40;
+        tx = W/2 + Math.sin(performance.now() / 400) * 30;
+        if (p.team === 1 && p.y > H * 0.55 && Math.random() < 0.012 * diff) {
+          release(p, (W/2 - p.x) * 0.02, 5.1);
+          S.shots += 0;
+        } else if (p.team === 1 && Math.random() < 0.01) {
+          const mates = teammates(1).filter((m) => m !== p && !m.gk);
+          if (mates[0]) {
+            const t = mates[0];
+            const d = dist(p, t) || 1;
+            release(p, (t.x - p.x) / d * 3.8, (t.y - p.y) / d * 3.8);
+          }
+        }
+      } else if (ball.owner && ball.owner.team !== p.team) {
+        tx = ball.owner.x; ty = ball.owner.y;
+      } else {
+        tx = ball.x; ty = ball.y;
+      }
+      const dx = tx - p.x, dy = ty - p.y, d = Math.hypot(dx, dy) || 1;
+      const spd = (p.gk ? 1.3 : 1.7) * (0.75 + diff);
+      p.vx = dx / d * spd;
+      p.vy = dy / d * spd;
+      if (ball.owner && ball.owner.team !== p.team && !p.gk && dist(p, ball.owner) < 18 && Math.random() < 0.02 * diff) {
+        if (Math.random() < 0.35 + diff * 0.2) {
+          S.ball.owner = p;
+        }
+      }
+    }
+
+    function loop() {
+      raf = requestAnimationFrame(loop);
+      if (!S) return;
+      const now = performance.now();
+      const dt = Math.min(0.033, (now - (S.lastTick || now)) / 1000);
+      S.lastTick = now;
+      if (S.phase === "play") {
+        S.left -= dt;
+        if (S.tackleCd > 0) S.tackleCd -= dt;
+        if (S.left <= 0) { S.left = 0; endMatch(); return; }
+        step(dt);
+      }
+      draw();
+      document.getElementById("board").textContent = "YOU " + S.you + " — " + S.opp + " OPP";
+      const m = Math.floor(S.left / 60), s = Math.floor(S.left % 60);
+      document.getElementById("clock").textContent = m + ":" + String(s).padStart(2, "0");
+      document.getElementById("stam").textContent = "STA " + Math.round(S.stamina);
+    }
+
+    function step(dt) {
+      const me = controlled();
+      const v = inputVec();
+      const sprinting = (S.sprint || hold.sprint || keys["shift"]) && S.stamina > 0;
+      if (sprinting) S.stamina = Math.max(0, S.stamina - 28 * dt);
+      else S.stamina = Math.min(100, S.stamina + 16 * dt);
+      const spd = (sprinting ? 2.7 : 1.9) * (S.dribble && S.ball.owner === me ? 1.18 : 1);
+      me.vx = v.x * spd;
+      me.vy = v.y * spd;
+
+      S.players.forEach((p) => aiThink(p, dt));
+      S.players.forEach((p) => {
+        p.x = Math.max(14, Math.min(W - 14, p.x + p.vx));
+        p.y = Math.max(22, Math.min(H - 22, p.y + p.vy));
+      });
+
+      if (S.ball.owner) {
+        attachBall(S.ball.owner);
+        if (S.dribble && S.ball.owner === me) {
+          S.players.forEach((p) => {
+            if (p.team === 1 && !p.gk && dist(me, p) < 20) {
+              S.dribbles += 1;
+              flash("DRIBBLE!");
+              S.dribble = false;
+              hold.dribble = false;
+            }
+          });
+        }
+      } else {
+        S.ball.x += S.ball.vx;
+        S.ball.y += S.ball.vy;
+        S.ball.vx *= 0.985;
+        S.ball.vy *= 0.985;
+        if (S.ball.x < 10 || S.ball.x > W - 10) S.ball.vx *= -0.7;
+        S.ball.x = Math.max(10, Math.min(W - 10, S.ball.x));
+        if (S.ball.y < 8) {
+          if (inOppGoal(S.ball)) scoreGoal(true);
+          else { S.ball.y = 10; S.ball.vy *= -0.5; }
+        }
+        if (S.ball.y > H - 8) {
+          if (inYourGoal(S.ball)) scoreGoal(false);
+          else { S.ball.y = H - 10; S.ball.vy *= -0.5; }
+        }
+        S.players.forEach((p) => {
+          if (dist(p, S.ball) < p.r + 7) {
+            if (S.pendingPass && p.team === 0 && p !== S.lastPasser) {
+              S.passes += 1;
+              S.pendingPass = false;
+            }
+            S.ball.owner = p;
+            if (p.team === 0 && !p.gk) S.ctrl = S.players.indexOf(p);
+          }
+        });
+      }
+    }
+
+    function drawPitch() {
+      ctx.fillStyle = "#147a36";
+      ctx.fillRect(0, 0, W, H);
+      for (let y = 0; y < H; y += 40) {
+        ctx.fillStyle = y % 80 === 0 ? "#16833b" : "#147a36";
+        ctx.fillRect(0, y, W, 40);
+      }
+      ctx.strokeStyle = "rgba(255,255,255,.85)";
+      ctx.lineWidth = 2;
+      ctx.strokeRect(8, 8, W - 16, H - 16);
+      ctx.beginPath(); ctx.moveTo(8, H / 2); ctx.lineTo(W - 8, H / 2); ctx.stroke();
+      ctx.beginPath(); ctx.arc(W / 2, H / 2, 36, 0, Math.PI * 2); ctx.stroke();
+      ctx.beginPath(); ctx.arc(W / 2, H / 2, 3, 0, Math.PI * 2); ctx.fillStyle = "#fff"; ctx.fill();
+      ctx.strokeStyle = "#fff";
+      ctx.strokeRect(W / 2 - 70, 8, 140, 70);
+      ctx.strokeRect(W / 2 - 70, H - 78, 140, 70);
+      ctx.strokeRect(W / 2 - GOAL_W / 2, 0, GOAL_W, GOAL_D);
+      ctx.strokeRect(W / 2 - GOAL_W / 2, H - GOAL_D, GOAL_W, GOAL_D);
+      ctx.fillStyle = "rgba(255,255,255,.12)";
+      ctx.fillRect(W / 2 - GOAL_W / 2, 0, GOAL_W, 8);
+      ctx.fillRect(W / 2 - GOAL_W / 2, H - 8, GOAL_W, 8);
+    }
+
+    function draw() {
+      drawPitch();
+      S.players.forEach((p, i) => {
+        ctx.beginPath();
+        ctx.fillStyle = p.team === 0 ? (p.gk ? "#fbbf24" : "#22d3ee") : (p.gk ? "#fb7185" : "#f43f5e");
+        ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+        ctx.fill();
+        if (i === S.ctrl) {
+          ctx.strokeStyle = "#fde68a";
+          ctx.lineWidth = 2;
+          ctx.beginPath(); ctx.arc(p.x, p.y, p.r + 4, 0, Math.PI * 2); ctx.stroke();
+        }
+      });
+      ctx.beginPath();
+      ctx.fillStyle = "#fff";
+      ctx.arc(S.ball.x, S.ball.y, 6, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.strokeStyle = "#111"; ctx.lineWidth = 1; ctx.stroke();
+    }
+
+    async function endMatch() {
+      if (S.phase === "done") return;
+      S.phase = "done";
+      stopLoop();
+      beep(220, 200);
+      const win = S.you > S.opp, draw = S.you === S.opp;
+      const result = win ? "win" : draw ? "draw" : "loss";
+      const completed = objectiveMet(S, S.mode) || win;
+      const score = Math.max(0, S.you * 120 + S.passes * 8 + S.dribbles * 10 + S.tackles * 12 + S.shots * 4 + (win ? 80 : 0));
+      document.getElementById("play").hidden = true;
+      document.getElementById("result").hidden = false;
+      document.getElementById("rtitle").textContent = win ? "VICTORY!" : draw ? "DRAW" : "MATCH LOST";
+      document.getElementById("rbody").innerHTML =
+        "Final score: YOU " + S.you + " — " + S.opp + " OPP" +
+        "<br>Result: " + result +
+        "<br>Goals: " + S.you + " · Conceded: " + S.opp +
+        "<br>Shots: " + S.shots + " · Passes: " + S.passes +
+        "<br>Dribbles: " + S.dribbles + " · Tackles: " + S.tackles +
+        "<br>Assists: " + S.assists +
+        (S.fastestGoal != null ? "<br>Fastest goal: " + Math.round(S.fastestGoal) + "s" : "");
+      const out = await GameShell.submitRun("minifootball", score, 0, 0, {
+        completed,
+        stage: S.stage,
+        mode: S.mode,
+        goals: S.you,
+        conceded: S.opp,
+        shots: S.shots,
+        passes: S.passes,
+        dribbles: S.dribbles,
+        tackles: S.tackles,
+        assists: S.assists,
+        result,
+        comeback: !!(S.wasBehind && win),
+        fastestGoal: S.fastestGoal,
+        time: 120 - S.left
+      });
+      const err = document.getElementById("rerr");
+      if (out && out.error) { err.hidden = false; err.textContent = out.error; }
+      else if (out && out.awarded) {
+        document.getElementById("rbody").innerHTML += "<br>XP +" + out.awarded.xp + " · Coins +" + out.awarded.coins;
+      }
+    }
+  </script>
+</body>
+</html>

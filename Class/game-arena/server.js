@@ -52,12 +52,13 @@ const GAMES = [
   { id: "targetstrike", name: "Target Strike", path: "/games/targetstrike.html", difficulty: "Hard" },
   { id: "patternmaster", name: "Pattern Master", path: "/games/patternmaster.html", difficulty: "Medium" },
   { id: "numberrush", name: "Number Rush", path: "/games/numberrush.html", difficulty: "Medium" },
-  { id: "codebreaker", name: "Code Breaker", path: "/games/codebreaker.html", difficulty: "Hard" }
+  { id: "codebreaker", name: "Code Breaker", path: "/games/codebreaker.html", difficulty: "Hard" },
+  { id: "minifootball", name: "Mini Football", path: "/games/minifootball.html", difficulty: "Medium" }
 ];
 
 const SCORE_CAP = {
   riddle: 500, reflex: 300, memory: 200, penalty: 10, rps: 50, wordclash: 300, trivia: 300,
-  minirace: 2000, targetstrike: 2500, patternmaster: 2500, numberrush: 2500, codebreaker: 2500
+  minirace: 2000, targetstrike: 2500, patternmaster: 2500, numberrush: 2500, codebreaker: 2500, minifootball: 2500
 };
 
 const MIME = {
@@ -191,6 +192,17 @@ function grantAchievements(user, gameId, st, completed) {
     if ((st.codesSolved || 0) >= 5) unlock(user, "code-cracker");
     if ((st.stage || 1) >= 20) unlock(user, "code-master");
     if ((st.codesSolved || 0) >= 25) unlock(user, "code-25");
+  }
+  if (gameId === "minifootball") {
+    if ((st.goals || 0) >= 1 || st.plays >= 1) unlock(user, "foot-first");
+    if ((st.wins || 0) >= 1) unlock(user, "foot-win");
+    if ((st.dribbles || 0) >= 10) unlock(user, "foot-dribble");
+    if ((st.passes || 0) >= 20) unlock(user, "foot-pass");
+    if ((st.goals || 0) >= 3) unlock(user, "foot-hat");
+    if ((st.cleanSheets || 0) >= 1) unlock(user, "foot-clean");
+    if (st.plays >= 10) unlock(user, "foot-10");
+    if ((st.goals || 0) >= 10) unlock(user, "foot-10goals");
+    if ((st.comebacks || 0) >= 1) unlock(user, "foot-comeback");
   }
 }
 
@@ -605,6 +617,24 @@ async function handleRequest(req, res) {
       if (completed && gameId === "patternmaster") st.patternsSolved = (st.patternsSolved || 0) + 1;
       if (completed && gameId === "codebreaker") st.codesSolved = (st.codesSolved || 0) + 1;
       if (completed && gameId === "minirace") st.racesPlayed = (st.racesPlayed || 0) + 1;
+      if (gameId === "minifootball") {
+        st.goals = (st.goals || 0) + Math.max(0, Math.floor(Number(body.goals) || 0));
+        st.conceded = (st.conceded || 0) + Math.max(0, Math.floor(Number(body.conceded) || 0));
+        st.shots = (st.shots || 0) + Math.max(0, Math.floor(Number(body.shots) || 0));
+        st.passes = (st.passes || 0) + Math.max(0, Math.floor(Number(body.passes) || 0));
+        st.dribbles = (st.dribbles || 0) + Math.max(0, Math.floor(Number(body.dribbles) || 0));
+        st.tackles = (st.tackles || 0) + Math.max(0, Math.floor(Number(body.tackles) || 0));
+        st.assists = (st.assists || 0) + Math.max(0, Math.floor(Number(body.assists) || 0));
+        const res = String(body.result || "");
+        if (res === "win") st.wins = (st.wins || 0) + 1;
+        if (res === "draw") st.draws = (st.draws || 0) + 1;
+        if (res === "loss") st.losses = (st.losses || 0) + 1;
+        if (Number(body.conceded) === 0 && completed) st.cleanSheets = (st.cleanSheets || 0) + 1;
+        if (body.comeback === true) st.comebacks = (st.comebacks || 0) + 1;
+        if (Number.isFinite(Number(body.fastestGoal)) && Number(body.fastestGoal) > 0) {
+          st.fastestGoal = st.fastestGoal == null ? Number(body.fastestGoal) : Math.min(st.fastestGoal, Number(body.fastestGoal));
+        }
+      }
       user.stats[gameId] = st;
       user.streaks = user.streaks || {};
       const today = new Date().toISOString().slice(0, 10);

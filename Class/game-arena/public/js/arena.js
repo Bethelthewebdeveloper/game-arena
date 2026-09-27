@@ -12,6 +12,7 @@
     patternmaster: { path: "/games/patternmaster.html", name: "Pattern Master" },
     numberrush: { path: "/games/numberrush.html", name: "Number Rush" },
     codebreaker: { path: "/games/codebreaker.html", name: "Code Breaker" },
+    minifootball: { path: "/games/minifootball.html", name: "Mini Football" },
   };
 
   async function getMe() {
