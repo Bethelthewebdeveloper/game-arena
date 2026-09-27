@@ -36,6 +36,7 @@ function resolveDataDir() {
 const DATA_DIR = resolveDataDir();
 const USERS_FILE = path.join(DATA_DIR, "users.json");
 const SCORES_FILE = path.join(DATA_DIR, "scores.json");
+const WAITLIST_FILE = path.join(DATA_DIR, "waitlist.json");
 const COOKIE_SECURE = process.env.COOKIE_SECURE === "true" || NODE_ENV === "production";
 const MAX_SCORES = 2000;
 const MAX_BODY = 32 * 1024;
@@ -99,6 +100,7 @@ function ensureData() {
     if (!fs.existsSync(DATA_DIR)) fs.mkdirSync(DATA_DIR, { recursive: true });
     seedFile(USERS_FILE, "users.json");
     seedFile(SCORES_FILE, "scores.json");
+    if (!fs.existsSync(WAITLIST_FILE)) writeJson(WAITLIST_FILE, []);
     fs.accessSync(DATA_DIR, fs.constants.W_OK);
     dataWritable = true;
   } catch (err) {
@@ -165,9 +167,16 @@ function unlock(user, id) {
 function grantAchievements(user, gameId, st, completed) {
   if (gameId === "minirace") {
     if (st.plays >= 1) unlock(user, "race-first");
+    if ((st.wins || 0) >= 1) unlock(user, "race-win");
     if ((st.bestTime || 999) <= 20) unlock(user, "race-speed");
+    if ((st.bestTime || 999) <= 12 && (st.obstaclesHit || 99) === 0) unlock(user, "race-perfect");
+    if ((st.checkpoints || 0) >= 15) unlock(user, "race-checkpoint");
+    if ((st.obstaclesHit || 0) === 0 && st.completions >= 1) unlock(user, "race-dodge");
     if ((st.stage || 1) >= 10) unlock(user, "race-track");
     if ((st.racesPlayed || st.completions || 0) >= 10) unlock(user, "race-10");
+    if ((st.racesPlayed || st.plays || 0) >= 25) unlock(user, "race-25");
+    if ((st.racesPlayed || st.plays || 0) >= 50) unlock(user, "race-50");
+    if ((st.championshipWins || 0) >= 1) unlock(user, "race-champ");
   }
   if (gameId === "targetstrike") {
     if (st.plays >= 1) unlock(user, "strike-first");
@@ -473,6 +482,77 @@ const PAGE_ROUTES = {
   "/offline": "/offline.html"
 };
 
+
+function readWaitlist() {
+  const data = readJson(WAITLIST_FILE);
+  return Array.isArray(data) ? data : [];
+}
+
+function findWaitlist(userId) {
+  return readWaitlist().find((row) => row.userId === userId) || null;
+}
+
+function safeWaitlistView(row) {
+  if (!row) return null;
+  return {
+    waitlistId: row.waitlistId,
+    userId: row.userId,
+    username: row.username,
+    displayName: row.displayName,
+    email: row.email || null,
+    currentPlan: row.currentPlan,
+    gameArenaLevel: row.gameArenaLevel,
+    joinedAt: row.joinedAt,
+    source: row.source,
+    status: row.status
+  };
+}
+
+async function notifyWaitlist(row) {
+  const provider = String(process.env.EMAIL_PROVIDER || "").trim().toLowerCase();
+  const apiKey = process.env.EMAIL_API_KEY || "";
+  const from = process.env.EMAIL_FROM || "";
+  const to = process.env.WAITLIST_NOTIFICATION_EMAIL || "betheljahbuikemonuoha@gmail.com";
+  const text = [
+    "New Pro waitlist registration",
+    "Display name: " + (row.displayName || row.username),
+    "Username: " + row.username,
+    "Email: " + (row.email || "(not provided)"),
+    "User ID: " + row.userId,
+    "Current plan: " + row.currentPlan,
+    "Game Arena level: " + row.gameArenaLevel,
+    "Joined: " + row.joinedAt,
+    "Waitlist ID: " + row.waitlistId,
+    "Source: " + (row.source || "dashboard")
+  ].join("\n");
+  if (!provider || !apiKey) {
+    return { sent: false, reason: "not_configured" };
+  }
+  if (provider === "resend") {
+    if (!from) return { sent: false, reason: "missing_from" };
+    try {
+      const res = await fetch("https://api.resend.com/emails", {
+        method: "POST",
+        headers: {
+          Authorization: "Bearer " + apiKey,
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          from,
+          to: [to],
+          subject: "GAME ARENA PRO — NEW WAITLIST REGISTRATION",
+          text
+        })
+      });
+      if (!res.ok) return { sent: false, reason: "provider_error" };
+      return { sent: true };
+    } catch {
+      return { sent: false, reason: "network" };
+    }
+  }
+  return { sent: false, reason: "unsupported_provider" };
+}
+
 async function handleRequest(req, res) {
   try {
     const rawUrl = req.url || req.originalUrl || "/";
@@ -498,6 +578,61 @@ async function handleRequest(req, res) {
 
     if (method === "GET" && pathname === "/api/games") {
       return sendJson(res, 200, { games: GAMES });
+    }
+
+    if (method === "GET" && pathname === "/api/waitlist") {
+      const user = getSessionUser(req);
+      if (!user) return sendJson(res, 401, { error: "Sign in to view the waitlist." });
+      return sendJson(res, 200, { entry: safeWaitlistView(findWaitlist(user.id)) });
+    }
+
+    if (method === "POST" && pathname === "/api/waitlist") {
+      if (!rateLimit(req, "waitlist", 8, 60 * 60 * 1000)) {
+        return sendJson(res, 429, { error: "Too many waitlist attempts. Try later." });
+      }
+      const user = getSessionUser(req);
+      if (!user) return sendJson(res, 401, { error: "Sign in to join the waitlist." });
+      const existing = findWaitlist(user.id);
+      if (existing) {
+        return sendJson(res, 200, {
+          already: true,
+          entry: safeWaitlistView(existing),
+          message: "You're already on the Game Arena Pro waitlist."
+        });
+      }
+      const body = await readBody(req);
+      let email = String(body.email || user.email || "").trim().toLowerCase();
+      if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+        return sendJson(res, 400, { error: "Enter a valid email, or leave it blank." });
+      }
+      const leveled = withLevel(user);
+      const row = {
+        waitlistId: "wl_" + Date.now().toString(36) + crypto.randomBytes(3).toString("hex"),
+        userId: user.id,
+        username: user.username,
+        displayName: user.username,
+        email: email || null,
+        currentPlan: user.plan || "free",
+        gameArenaLevel: leveled.level,
+        joinedAt: new Date().toISOString(),
+        source: String(body.source || "dashboard").slice(0, 40),
+        status: "WAITLISTED"
+      };
+      const list = readWaitlist();
+      list.push(row);
+      try {
+        writeJson(WAITLIST_FILE, list);
+      } catch {
+        return sendJson(res, 500, { error: "Could not save the waitlist right now." });
+      }
+      const mail = await notifyWaitlist(row);
+      return sendJson(res, 200, {
+        ok: true,
+        already: false,
+        entry: safeWaitlistView(row),
+        emailSent: mail.sent === true,
+        emailStatus: mail.sent ? "sent" : (mail.reason || "not_sent")
+      });
     }
 
     if (method === "GET" && pathname === "/healthz") {
@@ -617,6 +752,18 @@ async function handleRequest(req, res) {
       if (completed && gameId === "patternmaster") st.patternsSolved = (st.patternsSolved || 0) + 1;
       if (completed && gameId === "codebreaker") st.codesSolved = (st.codesSolved || 0) + 1;
       if (completed && gameId === "minirace") st.racesPlayed = (st.racesPlayed || 0) + 1;
+      if (gameId === "minirace") {
+        if (Number.isFinite(Number(body.position))) {
+          const pos = Math.max(1, Math.floor(Number(body.position)));
+          st.bestPosition = st.bestPosition == null ? pos : Math.min(st.bestPosition, pos);
+          if (pos === 1 && completed) st.wins = (st.wins || 0) + 1;
+        }
+        if (Number.isFinite(Number(body.checkpoints))) st.checkpoints = (st.checkpoints || 0) + Math.max(0, Math.floor(Number(body.checkpoints)));
+        if (Number.isFinite(Number(body.obstaclesHit))) st.obstaclesHit = (st.obstaclesHit || 0) + Math.max(0, Math.floor(Number(body.obstaclesHit)));
+        if (Number.isFinite(Number(body.fastestLap))) {
+          st.fastestLap = st.fastestLap == null ? Number(body.fastestLap) : Math.min(st.fastestLap, Number(body.fastestLap));
+        }
+      }
       if (gameId === "minifootball") {
         st.goals = (st.goals || 0) + Math.max(0, Math.floor(Number(body.goals) || 0));
         st.conceded = (st.conceded || 0) + Math.max(0, Math.floor(Number(body.conceded) || 0));

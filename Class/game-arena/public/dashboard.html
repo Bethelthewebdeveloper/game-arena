@@ -47,6 +47,37 @@
         <p id="stat-coins" class="mt-1 text-2xl font-semibold text-white">—</p>
       </div>
     </section>
+    <section class="mt-8 grid gap-4 lg:grid-cols-2" id="plans">
+      <article class="rounded-2xl border border-white/10 bg-white/[0.03] p-5">
+        <p class="text-xs uppercase tracking-widest text-cyan-300">Current plan</p>
+        <h2 id="plan-title" class="mt-1 text-xl font-semibold text-white">FREE PLAN</h2>
+        <p class="mt-2 text-sm text-slate-400">Play every core game, earn XP, coins, achievements and climb real leaderboards.</p>
+        <ul class="mt-4 space-y-1 text-sm text-slate-300">
+          <li>Core games, XP, levels, coins</li>
+          <li>Achievements, streaks, basic stats</li>
+          <li>Free stages and basic modes</li>
+        </ul>
+      </article>
+      <article class="rounded-2xl border border-amber-400/25 bg-amber-400/5 p-5">
+        <p class="text-xs uppercase tracking-widest text-amber-300">Game Arena Pro</p>
+        <h2 class="mt-1 text-xl font-semibold text-white">MORE STAGES + MODES</h2>
+        <p class="mt-2 text-sm text-slate-400">Pro is not a paid checkout yet. Join the waitlist for early access when it opens.</p>
+        <div class="mt-4 overflow-x-auto">
+          <table class="w-full min-w-[260px] text-left text-xs">
+            <thead><tr class="text-slate-500"><th class="py-1">Feature</th><th>Free</th><th>Pro</th></tr></thead>
+            <tbody class="text-slate-200">
+              <tr><td class="py-1">Core games, XP, coins</td><td>Yes</td><td>Yes</td></tr>
+              <tr><td class="py-1">Achievements & streaks</td><td>Yes</td><td>Yes</td></tr>
+              <tr><td class="py-1">Basic modes & stages</td><td>Yes</td><td>Yes</td></tr>
+              <tr><td class="py-1">Extra stages & modes</td><td>Limited</td><td>Planned</td></tr>
+              <tr><td class="py-1">Advanced stats & rewards</td><td>—</td><td>Planned</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <button id="join-waitlist" class="mt-5 min-h-11 w-full rounded-xl bg-amber-400 px-4 font-semibold text-slate-950">Join the waitlist</button>
+        <p id="waitlist-note" class="mt-2 text-xs text-slate-400"></p>
+      </article>
+    </section>
     <section class="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-3" id="games"></section>
   </main>
   <script src="/js/icons.js"></script>
@@ -82,6 +113,11 @@
       document.getElementById("stat-xp").textContent = (user.xp || 0) + " (" + user.xpIntoLevel + "/100)";
       document.getElementById("xp-bar").style.width = user.xpIntoLevel + "%";
       document.getElementById("stat-coins").textContent = user.coins || 0;
+      document.getElementById("plan-title").textContent = ((user.plan || "free").toUpperCase()) + " PLAN";
+      Arena.waitlistStatus().then((w) => {
+        if (w && w.entry) document.getElementById("waitlist-note").textContent = "You're already on the Pro waitlist.";
+      });
+      document.getElementById("join-waitlist").onclick = () => Arena.openWaitlist(user, "dashboard");
       const stats = user.stats || {};
       document.getElementById("games").innerHTML = cards.map(([id, icon, name, desc]) => {
         const st = stats[id] || {};
