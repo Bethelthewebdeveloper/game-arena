@@ -536,39 +536,128 @@ function founderWaitlistText(row) {
   ].join("\n");
 }
 
+function emailConfig() {
+  const providerRaw = String(process.env.EMAIL_PROVIDER || "").trim().toLowerCase();
+  const resendKey = process.env.RESEND_API_KEY || "";
+  const sendgridKey = process.env.SENDGRID_API_KEY || "";
+  const genericKey = process.env.EMAIL_API_KEY || "";
+  let provider = providerRaw;
+  if (!provider) {
+    if (resendKey) provider = "resend";
+    else if (sendgridKey) provider = "sendgrid";
+    else if (genericKey) provider = "resend";
+  }
+  const apiKey = provider === "sendgrid" ? (sendgridKey || genericKey) : (resendKey || genericKey);
+  const from = process.env.EMAIL_FROM || process.env.RESEND_FROM || process.env.MAIL_FROM || "";
+  const founder = process.env.WAITLIST_NOTIFICATION_EMAIL || "betheljahbuikemonuoha@gmail.com";
+  return {
+    provider: provider || "",
+    hasKey: Boolean(apiKey),
+    hasFrom: Boolean(from),
+    founderSet: Boolean(process.env.WAITLIST_NOTIFICATION_EMAIL),
+    founder,
+    from,
+    apiKey,
+    configured: Boolean(provider && apiKey && from)
+  };
+}
+
+function clipProviderError(text) {
+  return String(text || "").replace(/Bearer\s+[A-Za-z0-9._-]+/g, "Bearer [redacted]").slice(0, 240);
+}
+
 async function sendViaProvider(to, subject, text) {
-  const provider = String(process.env.EMAIL_PROVIDER || "").trim().toLowerCase();
-  const apiKey = process.env.EMAIL_API_KEY || "";
-  const from = process.env.EMAIL_FROM || "";
-  if (!provider || !apiKey) return { sent: false, reason: "not_configured" };
-  if (!from) return { sent: false, reason: "missing_from" };
+  const cfg = emailConfig();
+  if (!cfg.provider || !cfg.hasKey) {
+    console.log("email skip", { reason: "not_configured", provider: cfg.provider || "none", hasKey: cfg.hasKey, hasFrom: cfg.hasFrom });
+    return { sent: false, reason: "not_configured" };
+  }
+  if (!cfg.hasFrom) {
+    console.log("email skip", { reason: "missing_from", provider: cfg.provider });
+    return { sent: false, reason: "missing_from" };
+  }
+  console.log("email start", { provider: cfg.provider, toDomain: String(to).split("@")[1] || "unknown", hasFrom: true });
   try {
-    if (provider === "resend") {
+    if (cfg.provider === "resend") {
       const res = await fetch("https://api.resend.com/emails", {
         method: "POST",
-        headers: { Authorization: "Bearer " + apiKey, "Content-Type": "application/json" },
-        body: JSON.stringify({ from, to: [to], subject, text })
+        headers: { Authorization: "Bearer " + cfg.apiKey, "Content-Type": "application/json" },
+        body: JSON.stringify({ from: cfg.from, to: [to], subject, text })
       });
-      if (!res.ok) return { sent: false, reason: "provider_error" };
+      const body = await res.text();
+      if (!res.ok) {
+        console.log("email fail", { provider: "resend", status: res.status, detail: clipProviderError(body) });
+        return { sent: false, reason: "provider_error", status: res.status };
+      }
+      console.log("email ok", { provider: "resend", status: res.status });
       return { sent: true };
     }
-    if (provider === "sendgrid") {
+    if (cfg.provider === "sendgrid") {
       const res = await fetch("https://api.sendgrid.com/v3/mail/send", {
         method: "POST",
-        headers: { Authorization: "Bearer " + apiKey, "Content-Type": "application/json" },
+        headers: { Authorization: "Bearer " + cfg.apiKey, "Content-Type": "application/json" },
         body: JSON.stringify({
           personalizations: [{ to: [{ email: to }] }],
-          from: { email: from },
+          from: { email: cfg.from },
           subject,
           content: [{ type: "text/plain", value: text }]
         })
       });
-      if (res.status >= 300) return { sent: false, reason: "provider_error" };
+      const body = await res.text();
+      if (res.status >= 300) {
+        console.log("email fail", { provider: "sendgrid", status: res.status, detail: clipProviderError(body) });
+        return { sent: false, reason: "provider_error", status: res.status };
+      }
+      console.log("email ok", { provider: "sendgrid", status: res.status });
       return { sent: true };
     }
+    console.log("email skip", { reason: "unsupported_provider", provider: cfg.provider });
     return { sent: false, reason: "unsupported_provider" };
-  } catch {
+  } catch (err) {
+    console.log("email fail", { reason: "network", message: String(err && err.message ? err.message : err) });
     return { sent: false, reason: "network" };
+  }
+}
+
+async function syncWaitlistToSheets(row) {
+  const url = String(process.env.GOOGLE_SHEETS_WAITLIST_URL || "").trim();
+  if (!url) {
+    console.log("sheets skip", { reason: "missing_url" });
+    return { synced: false, reason: "missing_url" };
+  }
+  const payload = {
+    waitlistId: row.waitlistId,
+    name: row.displayName || row.username || "",
+    email: row.email || "",
+    phone: row.phone || "",
+    username: row.username || "",
+    level: row.gameArenaLevel || 1,
+    plan: row.currentPlan || "free",
+    joinedAt: row.joinedAt
+  };
+  console.log("sheets start", { waitlistId: row.waitlistId });
+  try {
+    const res = await fetch(url, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+      redirect: "manual"
+    });
+    let body = "";
+    if (res.status >= 300 && res.status < 400 && res.headers.get("location")) {
+      const follow = await fetch(res.headers.get("location"), { method: "GET", redirect: "follow" });
+      body = await follow.text();
+    } else {
+      body = await res.text();
+    }
+    let parsed = null;
+    try { parsed = JSON.parse(body); } catch {}
+    const ok = parsed && parsed.success === true;
+    console.log("sheets result", { waitlistId: row.waitlistId, ok, status: res.status, detail: String(body).slice(0, 120) });
+    return { synced: ok, reason: ok ? "ok" : "provider_error" };
+  } catch (err) {
+    console.log("sheets fail", { waitlistId: row.waitlistId, message: String(err && err.message ? err.message : err) });
+    return { synced: false, reason: "network" };
   }
 }
 
@@ -669,25 +758,43 @@ async function handleRequest(req, res) {
       list.push(row);
       try {
         writeJson(WAITLIST_FILE, list);
-      } catch {
+        console.log("waitlist saved", { waitlistId: row.waitlistId, userId: row.userId });
+      } catch (err) {
+        console.log("waitlist save failed", { message: String(err && err.message ? err.message : err) });
         return sendJson(res, 500, { error: "Could not save the waitlist right now." });
       }
+      console.log("waitlist email begin", { waitlistId: row.waitlistId });
       const mail = await notifyWaitlist(row);
+      console.log("waitlist email result", { waitlistId: row.waitlistId, emailSent: mail.sent === true, reason: mail.reason || null, userEmailSent: mail.userSent === true });
+      const sheets = await syncWaitlistToSheets(row);
       return sendJson(res, 200, {
         ok: true,
         already: false,
         entry: safeWaitlistView(row),
         emailSent: mail.sent === true,
         userEmailSent: mail.userSent === true,
-        emailStatus: mail.sent ? "sent" : (mail.reason || "not_sent")
+        emailStatus: mail.sent ? "sent" : (mail.reason || "not_sent"),
+        sheetsSynced: sheets.synced === true,
+        message: "You're on the Game Arena Pro waitlist."
       });
     }
 
     if (method === "GET" && pathname === "/healthz") {
+      const mail = emailConfig();
       return sendJson(res, dataWritable ? 200 : 503, {
         ok: dataWritable,
         env: NODE_ENV,
-        store: dataWritable ? "ready" : "unavailable"
+        store: dataWritable ? "ready" : "unavailable",
+        email: {
+          configured: mail.configured,
+          provider: mail.provider || null,
+          hasKey: mail.hasKey,
+          hasFrom: mail.hasFrom,
+          founderSet: mail.founderSet
+        },
+        sheets: {
+          configured: Boolean(String(process.env.GOOGLE_SHEETS_WAITLIST_URL || "").trim())
+        }
       });
     }
 

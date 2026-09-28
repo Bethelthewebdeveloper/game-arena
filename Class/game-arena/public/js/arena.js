@@ -165,13 +165,13 @@
         }
         if (data.already) {
           wrap.querySelector("h2").textContent = "YOU'RE ALREADY ON THE WAITLIST";
-          msg.textContent = "You're already on the Game Arena Pro waitlist.";
+          msg.textContent = data.message || "You're already on the Game Arena Pro waitlist.";
         } else if (data.emailSent) {
           wrap.querySelector("h2").textContent = "YOU'RE ON THE LIST!";
-          msg.textContent = "You're on the waitlist and the founder notification was sent.";
+          msg.textContent = data.message || "You're successfully on the Game Arena Pro waitlist.";
         } else {
           wrap.querySelector("h2").textContent = "YOU'RE ON THE LIST!";
-          msg.textContent = "Your waitlist request was saved, but the email notification could not be delivered.";
+          msg.textContent = data.message || "Your Pro waitlist registration was saved, but the notification email could not be delivered.";
         }
         btn.hidden = true;
         wrap.querySelector("#ga-wl-cancel").textContent = "Back to Game Arena";
