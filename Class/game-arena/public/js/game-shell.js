@@ -51,5 +51,24 @@
     }
   });
 
-  window.GameShell = { guard, submitRun, resetSubmit, mountChrome };
+  async function guardPro(gameName) {
+    const user = await guard();
+    if (!user) return null;
+    if ((user.plan || "free") === "pro") return user;
+    const main = document.querySelector("main") || document.body;
+    const box = document.createElement("section");
+    box.className = "mx-auto mt-6 max-w-xl rounded-2xl border border-amber-400/25 bg-amber-400/10 p-5";
+    box.innerHTML = `<p class="text-xs uppercase tracking-widest text-amber-300">Pro feature</p>
+      <h2 class="mt-1 text-xl font-semibold text-white">${gameName || "This game"} is planned for Game Arena Pro</h2>
+      <p class="mt-2 text-sm text-slate-300">Free accounts keep every current core game. Pro games stay locked until Pro launches.</p>
+      <div class="mt-4 flex flex-wrap gap-2">
+        <button id="pro-wl" class="min-h-11 rounded-xl bg-amber-400 px-4 font-semibold text-slate-950">Join the waitlist</button>
+        <a href="/dashboard" class="min-h-11 inline-flex items-center rounded-xl border border-white/15 px-4">Not now</a>
+      </div>`;
+    main.prepend(box);
+    document.getElementById("pro-wl").onclick = () => Arena.openWaitlist(user, "pro-game");
+    return null;
+  }
+
+  window.GameShell = { guard, guardPro, submitRun, resetSubmit, mountChrome };
 })();

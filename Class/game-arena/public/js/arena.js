@@ -13,6 +13,15 @@
     numberrush: { path: "/games/numberrush.html", name: "Number Rush" },
     codebreaker: { path: "/games/codebreaker.html", name: "Code Breaker" },
     minifootball: { path: "/games/minifootball.html", name: "Mini Football" },
+    wordscramble: { path: "/games/wordscramble.html", name: "Word Scramble" },
+    mathrush: { path: "/games/mathrush.html", name: "Math Rush" },
+    wordsearch: { path: "/games/wordsearch.html", name: "Word Search" },
+    merge2048: { path: "/games/merge2048.html", name: "2048" },
+    sudoku: { path: "/games/sudoku.html", name: "Sudoku" },
+    chess: { path: "/games/chess.html", name: "Chess", access: "pro" },
+    checkers: { path: "/games/checkers.html", name: "Checkers", access: "pro" },
+    minesweeper: { path: "/games/minesweeper.html", name: "Minesweeper", access: "pro" },
+    crossword: { path: "/games/crossword.html", name: "Crossword", access: "pro" },
   };
 
   async function getMe() {
@@ -105,10 +114,17 @@
           <div class="flex justify-between gap-3"><dt class="text-slate-500">Username</dt><dd class="text-white">${user.username}</dd></div>
           <div class="flex justify-between gap-3"><dt class="text-slate-500">User ID</dt><dd class="truncate text-white">${user.id || "—"}</dd></div>
           <div class="flex justify-between gap-3"><dt class="text-slate-500">Level</dt><dd class="text-white">${user.level || 1}</dd></div>
+          <div class="flex justify-between gap-3"><dt class="text-slate-500">XP</dt><dd class="text-white">${user.xp || 0}</dd></div>
           <div class="flex justify-between gap-3"><dt class="text-slate-500">Plan</dt><dd class="uppercase text-white">${user.plan || "free"}</dd></div>
         </dl>
-        <label class="mt-4 block text-sm text-slate-300">Contact email (optional)
-          <input id="ga-wl-email" type="email" class="mt-1 w-full min-h-11 rounded-xl border border-white/10 bg-white/5 px-3" placeholder="you@example.com" />
+        <label class="mt-4 block text-sm text-slate-300">Display name
+          <input id="ga-wl-name" class="mt-1 w-full min-h-11 rounded-xl border border-white/10 bg-white/5 px-3" value="${user.username || ""}" />
+        </label>
+        <label class="mt-3 block text-sm text-slate-300">Email address
+          <input id="ga-wl-email" type="email" class="mt-1 w-full min-h-11 rounded-xl border border-white/10 bg-white/5 px-3" placeholder="you@example.com" required />
+        </label>
+        <label class="mt-3 block text-sm text-slate-300">Phone number
+          <input id="ga-wl-phone" type="tel" class="mt-1 w-full min-h-11 rounded-xl border border-white/10 bg-white/5 px-3" placeholder="+2348012345678" required />
         </label>
         <p id="ga-wl-msg" class="mt-3 min-h-5 text-sm text-slate-300"></p>
         <div class="mt-4 flex flex-wrap gap-2">
@@ -130,7 +146,9 @@
           headers: { "Content-Type": "application/json" },
           credentials: "same-origin",
           body: JSON.stringify({
+            displayName: wrap.querySelector("#ga-wl-name").value,
             email: wrap.querySelector("#ga-wl-email").value,
+            phone: wrap.querySelector("#ga-wl-phone").value,
             source: source || "dashboard"
           })
         });
@@ -147,10 +165,13 @@
         }
         if (data.already) {
           wrap.querySelector("h2").textContent = "YOU'RE ALREADY ON THE WAITLIST";
-          msg.textContent = "You're already registered for Game Arena Pro early access.";
+          msg.textContent = "You're already on the Game Arena Pro waitlist.";
+        } else if (data.emailSent) {
+          wrap.querySelector("h2").textContent = "YOU'RE ON THE LIST!";
+          msg.textContent = "You're on the waitlist and the founder notification was sent.";
         } else {
           wrap.querySelector("h2").textContent = "YOU'RE ON THE LIST!";
-          msg.textContent = "You've joined the Game Arena Pro waitlist. We'll notify you when early access is available.";
+          msg.textContent = "Your waitlist request was saved, but the email notification could not be delivered.";
         }
         btn.hidden = true;
         wrap.querySelector("#ga-wl-cancel").textContent = "Back to Game Arena";

@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Minesweeper — Game Arena</title>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700&display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com"></script><style></style></head>
+<body class="min-h-screen bg-[#070b16] font-sans text-slate-200">
+<main class="mx-auto max-w-xl px-4 py-6">
+<p class="text-xs uppercase tracking-widest text-cyan-300">Game Arena · Minesweeper</p>
+
+<h1 class="mt-1 text-2xl font-semibold text-white">Minesweeper</h1>
+<select id="diff" class="mt-3 min-h-11 w-full rounded-xl border border-white/10 bg-white/5 px-3">
+  <option value="9,10">Beginner 9x9</option>
+  <option value="12,20">Intermediate</option>
+  <option value="16,40">Expert</option>
+</select>
+<button id="start" class="mt-3 min-h-12 w-full rounded-xl bg-cyan-400 font-semibold text-slate-950">Start</button>
+<section id="play" hidden>
+  <div class="mt-2 flex justify-between text-sm"><span id="time">0s</span><span id="left"></span></div>
+  <div id="board" class="mt-3 grid gap-0.5"></div>
+</section>
+<section id="result" hidden class="mt-4 rounded-2xl border border-white/10 p-5">
+  <h2 id="rtitle" class="text-xl font-semibold"></h2><p id="rbody" class="mt-2 text-sm"></p>
+  <button id="again" class="mt-4 min-h-11 rounded-xl bg-cyan-400 px-4 font-semibold text-slate-950">Restart</button>
+  <a class="ml-2 rounded-xl border border-white/15 px-4 py-2" href="/dashboard">Back</a>
+</section>
+</main>
+<script src="/js/arena.js"></script><script src="/js/game-shell.js"></script>
+<script>GameShell.mountChrome("MINESWEEPER");GameShell.guardPro("Minesweeper");
+let S,tick;
+function start(){
+  GameShell.resetSubmit();
+  const [n,m]=document.getElementById("diff").value.split(",").map(Number);
+  const mines=new Set(); while(mines.size<m) mines.add(Math.floor(Math.random()*n*n));
+  S={n,m,mines,open:new Set(),flag:new Set(),t0:Date.now(),done:false};
+  document.getElementById("play").hidden=false; document.getElementById("result").hidden=true;
+  document.getElementById("board").style.gridTemplateColumns="repeat("+n+",minmax(0,1fr))";
+  draw(); clearInterval(tick); tick=setInterval(()=>document.getElementById("time").textContent=Math.floor((Date.now()-S.t0)/1000)+"s",400);
+}
+function neighbors(i){ const x=i%S.n,y=Math.floor(i/S.n),o=[]; for(let dy=-1;dy<=1;dy++) for(let dx=-1;dx<=1;dx++){ if(!dx&&!dy) continue; const xx=x+dx,yy=y+dy; if(xx>=0&&yy>=0&&xx<S.n&&yy<S.n) o.push(yy*S.n+xx);} return o; }
+function count(i){ return neighbors(i).filter(j=>S.mines.has(j)).length; }
+function flood(i){ if(S.open.has(i)||S.flag.has(i)||S.mines.has(i)) return; S.open.add(i); if(count(i)===0) neighbors(i).forEach(flood); }
+function draw(){
+  const b=document.getElementById("board"); b.innerHTML="";
+  for(let i=0;i<S.n*S.n;i++){
+    const c=document.createElement("button"); c.className="h-8 text-xs rounded "+(S.open.has(i)?"bg-white/10":"bg-white/20");
+    if(S.flag.has(i)&&!S.open.has(i)) c.textContent="F";
+    else if(S.open.has(i)) c.textContent=S.mines.has(i)?"*":(count(i)||"");
+    c.onclick=()=>{ if(S.done||S.flag.has(i)) return; if(S.mines.has(i)) end(false); else { flood(i); if(S.open.size===S.n*S.n-S.m) end(true); else draw(); } };
+    c.oncontextmenu=(e)=>{ e.preventDefault(); if(S.open.has(i)||S.done) return; if(S.flag.has(i)) S.flag.delete(i); else S.flag.add(i); draw(); };
+    b.appendChild(c);
+  }
+  document.getElementById("left").textContent="Mines "+(S.m-S.flag.size);
+}
+async function end(win){
+  S.done=true; clearInterval(tick); const t=Math.floor((Date.now()-S.t0)/1000);
+  document.getElementById("play").hidden=true; document.getElementById("result").hidden=false;
+  document.getElementById("rtitle").textContent=win?"CLEARED":"BOOM";
+  const score=win?Math.max(50,2000-t*4):Math.max(10,S.open.size);
+  document.getElementById("rbody").textContent="Time "+t+"s · Score "+score;
+  const out=await GameShell.submitRun("minesweeper", score,0,0,{completed:win,stage:1,time:t});
+  if(out&&out.awarded) document.getElementById("rbody").textContent+=" · XP +"+out.awarded.xp;
+}
+document.getElementById("start").onclick=start; document.getElementById("again").onclick=()=>{document.getElementById("play").hidden=true;document.getElementById("result").hidden=true;};
+</script></body></html>

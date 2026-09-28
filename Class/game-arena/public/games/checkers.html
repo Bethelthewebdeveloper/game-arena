@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Checkers — Game Arena</title>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700&display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com"></script></head>
+<body class="min-h-screen bg-[#070b16] font-sans text-slate-200">
+<main class="mx-auto max-w-xl px-4 py-6">
+<p class="text-xs uppercase tracking-widest text-amber-300">Game Arena Pro · Checkers</p>
+<h1 class="mt-1 text-2xl font-semibold text-white">Checkers</h1>
+<button id="start" class="mt-3 min-h-12 w-full rounded-xl bg-cyan-400 font-semibold text-slate-950">Start</button>
+<section id="play" hidden><p id="status" class="mt-2 text-sm">You are red. Tap a piece, then a dark square.</p>
+<div id="board" class="mt-3 grid grid-cols-8 overflow-hidden rounded-xl"></div></section>
+<section id="result" hidden class="mt-4 rounded-2xl border border-white/10 p-5">
+<h2 id="rtitle" class="text-xl font-semibold"></h2><p id="rbody" class="mt-2 text-sm"></p>
+<button id="again" class="mt-4 min-h-11 rounded-xl bg-cyan-400 px-4 font-semibold text-slate-950">Restart</button>
+<a class="ml-2 rounded-xl border border-white/15 px-4 py-2" href="/dashboard">Back</a>
+</section></main>
+<script src="/js/arena.js"></script><script src="/js/game-shell.js"></script>
+<script>
+GameShell.mountChrome("CHECKERS"); GameShell.guardPro("Checkers");
+let B,sel,turn,over;
+function setup(){ B=Array.from({length:8},()=>Array(8).fill(0));
+  for(let y=0;y<3;y++) for(let x=0;x<8;x++) if((x+y)%2) B[y][x]=2;
+  for(let y=5;y<8;y++) for(let x=0;x<8;x++) if((x+y)%2) B[y][x]=1;
+}
+function moves(x,y){
+  const p=B[y][x]; if(!p) return [];
+  const dirs=p===1||p===3?[[-1,-1],[1,-1]]:[[-1,1],[1,1]];
+  if(p===3||p===4) dirs.push([-1,-1],[1,-1],[-1,1],[1,1]);
+  const out=[];
+  dirs.forEach(([dx,dy])=>{
+    const xx=x+dx,yy=y+dy;
+    if(xx>=0&&yy>=0&&xx<8&&yy<8&&!B[yy][xx]) out.push([xx,yy,null]);
+    const jx=x+2*dx,jy=y+2*dy;
+    if(xx>=0&&yy>=0&&xx<8&&yy<8&&jx>=0&&jy>=0&&jx<8&&jy<8&&B[yy][xx]&&(B[yy][xx]%2)!==(p%2)&&!B[jy][jx]) out.push([jx,jy,[xx,yy]]);
+  });
+  return out;
+}
+function draw(){
+  const el=document.getElementById("board"); el.innerHTML="";
+  for(let y=0;y<8;y++) for(let x=0;x<8;x++){
+    const d=document.createElement("button");
+    d.className="h-10 "+((x+y)%2?"bg-[#5a3a24]":"bg-[#d7b899]");
+    if(B[y][x]){ const s=document.createElement("span"); s.className="inline-block h-7 w-7 rounded-full "+(B[y][x]%2?"bg-rose-500":"bg-slate-800")+(B[y][x]>2?" ring-2 ring-amber-300":""); d.appendChild(s); }
+    d.onclick=()=>click(x,y); el.appendChild(d);
+  }
+}
+function click(x,y){
+  if(over||turn!==1) return;
+  if(sel){ const mv=moves(sel[0],sel[1]).find(m=>m[0]===x&&m[1]===y);
+    if(mv){ apply(sel[0],sel[1],mv); sel=null; turn=2; draw(); setTimeout(ai,220); return; } }
+  if(B[y][x]%2===1) sel=[x,y]; else sel=null;
+}
+function apply(x,y,mv){
+  const [xx,yy,cap]=mv; B[yy][xx]=B[y][x]; B[y][x]=0; if(cap) B[cap[1]][cap[0]]=0;
+  if(B[yy][xx]===1&&yy===0) B[yy][xx]=3; if(B[yy][xx]===2&&yy===7) B[yy][xx]=4;
+}
+function ai(){
+  const opts=[]; for(let y=0;y<8;y++) for(let x=0;x<8;x++) if(B[y][x]===2||B[y][x]===4) moves(x,y).forEach(m=>opts.push([x,y,m]));
+  if(!opts.length) return end(true);
+  const cap=opts.filter(o=>o[2][2]); const pick=cap.length?cap:opts; const o=pick[Math.floor(Math.random()*pick.length)];
+  apply(o[0],o[1],o[2]); turn=1; draw();
+  let you=false; for(let y=0;y<8;y++) for(let x=0;x<8;x++) if(B[y][x]%2===1 && moves(x,y).length) you=true;
+  if(!you) end(false);
+}
+async function end(win){ over=true; document.getElementById("play").hidden=true; document.getElementById("result").hidden=false;
+  document.getElementById("rtitle").textContent=win?"YOU WIN":"DEFEAT";
+  const out=await GameShell.submitRun("checkers", win?300:60,0,0,{completed:win,stage:1});
+  document.getElementById("rbody").textContent="Score "+(win?300:60)+(out&&out.awarded?" · XP +"+out.awarded.xp:"");
+}
+document.getElementById("start").onclick=()=>{ GameShell.resetSubmit(); setup(); sel=null; turn=1; over=false; document.getElementById("play").hidden=false; document.getElementById("result").hidden=true; draw(); };
+document.getElementById("again").onclick=()=>document.getElementById("start").click();
+</script></body></html>

@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Chess — Game Arena</title>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700&display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com"></script></head>
+<body class="min-h-screen bg-[#070b16] font-sans text-slate-200">
+<main class="mx-auto max-w-xl px-4 py-6">
+<p class="text-xs uppercase tracking-widest text-amber-300">Game Arena Pro · Chess</p>
+<h1 class="mt-1 text-2xl font-semibold text-white">Chess</h1>
+<p class="text-sm text-slate-400">You play white. Tap a piece, then a legal square.</p>
+<select id="diff" class="mt-3 min-h-11 w-full rounded-xl border border-white/10 bg-white/5 px-3">
+  <option value="1">Beginner AI</option><option value="2">Club AI</option>
+</select>
+<button id="start" class="mt-3 min-h-12 w-full rounded-xl bg-cyan-400 font-semibold text-slate-950">Start</button>
+<section id="play" hidden>
+  <p id="status" class="mt-2 text-sm"></p>
+  <div id="board" class="mt-3 grid grid-cols-8 overflow-hidden rounded-xl"></div>
+</section>
+<section id="result" hidden class="mt-4 rounded-2xl border border-white/10 p-5">
+  <h2 id="rtitle" class="text-xl font-semibold"></h2>
+  <p id="rbody" class="mt-2 text-sm"></p>
+  <button id="again" class="mt-4 min-h-11 rounded-xl bg-cyan-400 px-4 font-semibold text-slate-950">Restart</button>
+  <a class="ml-2 rounded-xl border border-white/15 px-4 py-2" href="/dashboard">Back</a>
+</section>
+</main>
+<script src="/js/arena.js"></script><script src="/js/game-shell.js"></script>
+<script>
+GameShell.mountChrome("CHESS");
+GameShell.guardPro("Chess");
+const P="PNBRQK", p="pnbrqk";
+const SYM={P:"♙",N:"♘",B:"♗",R:"♖",Q:"♕",K:"♔",p:"♟",n:"♞",b:"♝",r:"♜",q:"♛",k:"♚"};
+function startPos(){ return ["rnbqkbnr","pppppppp","........","........","........","........","PPPPPPPP","RNBQKBNR"].map(r=>r.split("")); }
+let B,turn,sel,over;
+function piece(x,y){ return B[y][x]; }
+function color(ch){ if(!ch||ch===".") return null; return ch===ch.toUpperCase()?"w":"b"; }
+function inb(x,y){ return x>=0&&y>=0&&x<8&&y<8; }
+function movesFrom(x,y){
+  const ch=piece(x,y); if(!ch||ch===".") return [];
+  const c=color(ch); const t=ch.toUpperCase(); const out=[];
+  const add=(xx,yy)=>{ if(!inb(xx,yy)) return false; const q=piece(xx,yy); if(q==="."){ out.push([xx,yy]); return true;} if(color(q)!==c) out.push([xx,yy]); return false; };
+  if(t==="P"){
+    const dir=c==="w"?-1:1, start=c==="w"?6:1;
+    if(inb(x,y+dir)&&piece(x,y+dir)==="."){ out.push([x,y+dir]); if(y===start&&piece(x,y+2*dir)===".") out.push([x,y+2*dir]); }
+    [[x-1,y+dir],[x+1,y+dir]].forEach(([xx,yy])=>{ if(inb(xx,yy)&&piece(xx,yy)!=="."&&color(piece(xx,yy))!==c) out.push([xx,yy]); });
+  }
+  if(t==="N") [[1,2],[2,1],[-1,2],[-2,1],[1,-2],[2,-1],[-1,-2],[-2,-1]].forEach(([dx,dy])=>add(x+dx,y+dy));
+  if(t==="K") for(let dx=-1;dx<=1;dx++) for(let dy=-1;dy<=1;dy++) if(dx||dy) add(x+dx,y+dy);
+  const rays=t==="B"?[[1,1],[1,-1],[-1,1],[-1,-1]]:t==="R"?[[1,0],[-1,0],[0,1],[0,-1]]:t==="Q"?[[1,1],[1,-1],[-1,1],[-1,-1],[1,0],[-1,0],[0,1],[0,-1]]:[];
+  rays.forEach(([dx,dy])=>{ let xx=x+dx,yy=y+dy; while(add(xx,yy)&&piece(xx,yy)==="."){ xx+=dx; yy+=dy; } });
+  return out;
+}
+function allMoves(side){ const m=[]; for(let y=0;y<8;y++) for(let x=0;x<8;x++) if(color(piece(x,y))===side) movesFrom(x,y).forEach(t=>m.push([[x,y],t])); return m; }
+function apply(fr,to){ const [x,y]=fr,[xx,yy]=to; const cap=piece(xx,yy); B[yy][xx]=B[y][x]; B[y][x]="."; if((B[yy][xx]==="P"&&yy===0)||(B[yy][xx]==="p"&&yy===7)) B[yy][xx]=B[yy][xx]==="P"?"Q":"q"; return cap; }
+function draw(){
+  const el=document.getElementById("board"); el.innerHTML="";
+  for(let y=0;y<8;y++) for(let x=0;x<8;x++){
+    const d=document.createElement("button");
+    const dark=(x+y)%2; d.className="h-10 text-lg "+(dark?"bg-[#769656]":"bg-[#eeeed2]")+" "+(sel&&sel[0]===x&&sel[1]===y?"ring-2 ring-amber-300":"");
+    d.textContent=SYM[piece(x,y)]||"";
+    d.onclick=()=>click(x,y);
+    el.appendChild(d);
+  }
+}
+function click(x,y){
+  if(over||turn!=="w") return;
+  if(sel){ const ok=movesFrom(sel[0],sel[1]).some(t=>t[0]===x&&t[1]===y);
+    if(ok){ apply(sel,[x,y]); sel=null; turn="b"; draw(); setTimeout(ai,200); return; } }
+  if(color(piece(x,y))==="w") sel=[x,y]; else sel=null; draw();
+}
+function ai(){
+  const ms=allMoves("b"); if(!ms.length) return end(true);
+  const cap=ms.filter(m=>piece(m[1][0],m[1][1])!==".");
+  const pick=(document.getElementById("diff").value==="2"&&cap.length)?cap:ms;
+  const mv=pick[Math.floor(Math.random()*pick.length)];
+  apply(mv[0],mv[1]); turn="w"; draw();
+  if(!allMoves("w").length) end(false);
+}
+async function end(win){
+  over=true; document.getElementById("play").hidden=true; document.getElementById("result").hidden=false;
+  document.getElementById("rtitle").textContent=win?"YOU WIN":"DEFEAT";
+  const score=win?400:80;
+  const out=await GameShell.submitRun("chess",score,0,0,{completed:win,stage:1});
+  document.getElementById("rbody").textContent="Score "+score+(out&&out.awarded?" · XP +"+out.awarded.xp:"");
+}
+document.getElementById("start").onclick=()=>{ GameShell.resetSubmit(); B=startPos(); turn="w"; sel=null; over=false; document.getElementById("play").hidden=false; document.getElementById("result").hidden=true; draw(); };
+document.getElementById("again").onclick=()=>document.getElementById("start").click();
+</script></body></html>

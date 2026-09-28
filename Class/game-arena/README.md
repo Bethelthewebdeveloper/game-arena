@@ -40,3 +40,15 @@ This project does not use MongoDB, MySQL, JWT, WebSockets, or a separate fronten
 - Needs a persistent Node server (Render, Railway, Fly.io, a VPS). Not a static-only host such as GitHub Pages.
 - Needs a writable disk for data/ or DATA_DIR. In-memory sessions reset when the process restarts.
 - Health check: GET /healthz
+
+
+## Pro waitlist email
+
+Waitlist records save without email. Founder mail is sent only when these Vercel env vars are set:
+
+- EMAIL_PROVIDER=`resend` or `sendgrid`
+- EMAIL_API_KEY=your provider API key
+- EMAIL_FROM=a verified sender (for Resend: `Game Arena <you@yourdomain>`)
+- WAITLIST_NOTIFICATION_EMAIL=betheljahbuikemonuoha@gmail.com
+
+If those are missing, the user still joins the waitlist and sees that the notification could not be delivered. Passwords are never stored or emailed.

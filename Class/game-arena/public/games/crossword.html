@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Crossword — Game Arena</title>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700&display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com"></script><style></style></head>
+<body class="min-h-screen bg-[#070b16] font-sans text-slate-200">
+<main class="mx-auto max-w-xl px-4 py-6">
+<p class="text-xs uppercase tracking-widest text-cyan-300">Game Arena · Crossword</p>
+
+<h1 class="mt-1 text-2xl font-semibold text-white">Crossword</h1>
+<p class="text-sm text-slate-400">Fill every letter. Clues sit below the grid.</p>
+<button id="start" class="mt-3 min-h-12 w-full rounded-xl bg-cyan-400 font-semibold text-slate-950">Start</button>
+<section id="play" hidden>
+  <div id="grid" class="mt-3 grid grid-cols-5 gap-1"></div>
+  <ul class="mt-4 space-y-1 text-sm text-slate-300">
+    <li>1 Across — Skill contest place (5)</li>
+    <li>2 Across — Opposite of lose (3)</li>
+    <li>3 Across — Playing piece in chess (4)</li>
+    <li>1 Down — Level up resource (2)</li>
+    <li>2 Down — Short for information (4)</li>
+  </ul>
+  <button id="check" class="mt-4 min-h-11 w-full rounded-xl bg-cyan-400 font-semibold text-slate-950">Check puzzle</button>
+</section>
+<section id="result" hidden class="mt-4 rounded-2xl border border-white/10 p-5">
+  <h2 class="text-xl font-semibold">RESULTS</h2><p id="rbody" class="mt-2 text-sm"></p>
+  <button id="again" class="mt-4 min-h-11 rounded-xl bg-cyan-400 px-4 font-semibold text-slate-950">Play Again</button>
+  <a class="ml-2 rounded-xl border border-white/15 px-4 py-2" href="/dashboard">Back</a>
+</section>
+</main>
+<script src="/js/arena.js"></script><script src="/js/game-shell.js"></script>
+<script>GameShell.mountChrome("CROSSWORD");GameShell.guardPro("Crossword");
+const SOL=["ARENA","W I N","PAWN ","X    ","INFO "];
+function start(){
+  GameShell.resetSubmit();
+  document.getElementById("play").hidden=false; document.getElementById("result").hidden=true;
+  const g=document.getElementById("grid"); g.innerHTML="";
+  for(let y=0;y<5;y++) for(let x=0;x<5;x++){
+    const ch=SOL[y][x];
+    if(ch===" "){ const d=document.createElement("div"); d.className="h-10 rounded bg-slate-900"; g.appendChild(d); }
+    else { const i=document.createElement("input"); i.maxLength=1; i.dataset.k=y+","+x; i.className="h-10 rounded bg-white/10 text-center uppercase"; g.appendChild(i); }
+  }
+}
+document.getElementById("start").onclick=start;
+document.getElementById("check").onclick=async ()=>{
+  let ok=0,total=0;
+  document.querySelectorAll("#grid input").forEach(i=>{
+    const [y,x]=i.dataset.k.split(",").map(Number); total++;
+    if((i.value||"").toUpperCase()===SOL[y][x]) ok++;
+  });
+  const score=ok*40; const completed=ok===total;
+  document.getElementById("play").hidden=true; document.getElementById("result").hidden=false;
+  document.getElementById("rbody").textContent=(completed?"Puzzle complete. ":"")+ok+"/"+total+" letters · Score "+score;
+  const out=await GameShell.submitRun("crossword", score,0,0,{completed,stage:1});
+  if(out&&out.awarded) document.getElementById("rbody").textContent+=" · XP +"+out.awarded.xp;
+};
+document.getElementById("again").onclick=()=>{document.getElementById("play").hidden=true;document.getElementById("result").hidden=true;};
+</script></body></html>

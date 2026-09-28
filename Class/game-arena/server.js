@@ -54,12 +54,21 @@ const GAMES = [
   { id: "patternmaster", name: "Pattern Master", path: "/games/patternmaster.html", difficulty: "Medium" },
   { id: "numberrush", name: "Number Rush", path: "/games/numberrush.html", difficulty: "Medium" },
   { id: "codebreaker", name: "Code Breaker", path: "/games/codebreaker.html", difficulty: "Hard" },
-  { id: "minifootball", name: "Mini Football", path: "/games/minifootball.html", difficulty: "Medium" }
+  { id: "minifootball", name: "Mini Football", path: "/games/minifootball.html", difficulty: "Medium" },
+  { id: "wordscramble", name: "Word Scramble", path: "/games/wordscramble.html", difficulty: "Medium", access: "free" },
+  { id: "mathrush", name: "Math Rush", path: "/games/mathrush.html", difficulty: "Medium", access: "free" },
+  { id: "wordsearch", name: "Word Search", path: "/games/wordsearch.html", difficulty: "Medium", access: "free" },
+  { id: "merge2048", name: "2048", path: "/games/merge2048.html", difficulty: "Medium", access: "free" },
+  { id: "sudoku", name: "Sudoku", path: "/games/sudoku.html", difficulty: "Hard", access: "free" },
+  { id: "chess", name: "Chess", path: "/games/chess.html", difficulty: "Hard", access: "pro" },
+  { id: "checkers", name: "Checkers", path: "/games/checkers.html", difficulty: "Medium", access: "pro" },
+  { id: "minesweeper", name: "Minesweeper", path: "/games/minesweeper.html", difficulty: "Medium", access: "pro" },
+  { id: "crossword", name: "Crossword", path: "/games/crossword.html", difficulty: "Medium", access: "pro" }
 ];
 
 const SCORE_CAP = {
   riddle: 500, reflex: 300, memory: 200, penalty: 10, rps: 50, wordclash: 300, trivia: 300,
-  minirace: 2000, targetstrike: 2500, patternmaster: 2500, numberrush: 2500, codebreaker: 2500, minifootball: 2500
+  minirace: 2000, targetstrike: 2500, patternmaster: 2500, numberrush: 2500, codebreaker: 2500, minifootball: 2500, wordscramble: 2000, mathrush: 2000, wordsearch: 1500, merge2048: 5000, sudoku: 1500, chess: 800, checkers: 800, minesweeper: 2000, crossword: 1200
 };
 
 const MIME = {
@@ -500,7 +509,9 @@ function safeWaitlistView(row) {
     username: row.username,
     displayName: row.displayName,
     email: row.email || null,
+    phone: row.phone || null,
     currentPlan: row.currentPlan,
+    xp: row.xp || 0,
     gameArenaLevel: row.gameArenaLevel,
     joinedAt: row.joinedAt,
     source: row.source,
@@ -508,50 +519,78 @@ function safeWaitlistView(row) {
   };
 }
 
-async function notifyWaitlist(row) {
+function founderWaitlistText(row) {
+  return [
+    "Game Arena Pro Waitlist Signup",
+    "",
+    "Display Name: " + (row.displayName || row.username),
+    "Username: " + row.username,
+    "Email: " + (row.email || "(not provided)"),
+    "Phone Number: " + (row.phone || "(not provided)"),
+    "Game Arena User ID: " + row.userId,
+    "Current Plan: " + row.currentPlan,
+    "Game Arena Level: " + row.gameArenaLevel,
+    "XP: " + (row.xp || 0),
+    "Joined At: " + row.joinedAt,
+    "Waitlist ID: " + row.waitlistId
+  ].join("\n");
+}
+
+async function sendViaProvider(to, subject, text) {
   const provider = String(process.env.EMAIL_PROVIDER || "").trim().toLowerCase();
   const apiKey = process.env.EMAIL_API_KEY || "";
   const from = process.env.EMAIL_FROM || "";
-  const to = process.env.WAITLIST_NOTIFICATION_EMAIL || "betheljahbuikemonuoha@gmail.com";
-  const text = [
-    "New Pro waitlist registration",
-    "Display name: " + (row.displayName || row.username),
-    "Username: " + row.username,
-    "Email: " + (row.email || "(not provided)"),
-    "User ID: " + row.userId,
-    "Current plan: " + row.currentPlan,
-    "Game Arena level: " + row.gameArenaLevel,
-    "Joined: " + row.joinedAt,
-    "Waitlist ID: " + row.waitlistId,
-    "Source: " + (row.source || "dashboard")
-  ].join("\n");
-  if (!provider || !apiKey) {
-    return { sent: false, reason: "not_configured" };
-  }
-  if (provider === "resend") {
-    if (!from) return { sent: false, reason: "missing_from" };
-    try {
+  if (!provider || !apiKey) return { sent: false, reason: "not_configured" };
+  if (!from) return { sent: false, reason: "missing_from" };
+  try {
+    if (provider === "resend") {
       const res = await fetch("https://api.resend.com/emails", {
         method: "POST",
-        headers: {
-          Authorization: "Bearer " + apiKey,
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify({
-          from,
-          to: [to],
-          subject: "GAME ARENA PRO — NEW WAITLIST REGISTRATION",
-          text
-        })
+        headers: { Authorization: "Bearer " + apiKey, "Content-Type": "application/json" },
+        body: JSON.stringify({ from, to: [to], subject, text })
       });
       if (!res.ok) return { sent: false, reason: "provider_error" };
       return { sent: true };
-    } catch {
-      return { sent: false, reason: "network" };
     }
+    if (provider === "sendgrid") {
+      const res = await fetch("https://api.sendgrid.com/v3/mail/send", {
+        method: "POST",
+        headers: { Authorization: "Bearer " + apiKey, "Content-Type": "application/json" },
+        body: JSON.stringify({
+          personalizations: [{ to: [{ email: to }] }],
+          from: { email: from },
+          subject,
+          content: [{ type: "text/plain", value: text }]
+        })
+      });
+      if (res.status >= 300) return { sent: false, reason: "provider_error" };
+      return { sent: true };
+    }
+    return { sent: false, reason: "unsupported_provider" };
+  } catch {
+    return { sent: false, reason: "network" };
   }
-  return { sent: false, reason: "unsupported_provider" };
 }
+
+async function notifyWaitlist(row) {
+  const founder = process.env.WAITLIST_NOTIFICATION_EMAIL || "betheljahbuikemonuoha@gmail.com";
+  const founderMail = await sendViaProvider(founder, "New Game Arena Pro Waitlist Signup", founderWaitlistText(row));
+  let userMail = { sent: false, reason: "skipped" };
+  if (founderMail.sent && row.email) {
+    userMail = await sendViaProvider(
+      row.email,
+      "You're on the Game Arena Pro Waitlist",
+      "Thanks for joining the Game Arena Pro waitlist. We'll let you know when Pro features become available."
+    );
+  }
+  return { sent: founderMail.sent === true, reason: founderMail.reason, userSent: userMail.sent === true };
+}
+
+function validPhone(raw) {
+  const s = String(raw || "").replace(/[\s()-]/g, "");
+  return /^\+?[0-9]{10,15}$/.test(s);
+}
+
 
 async function handleRequest(req, res) {
   try {
@@ -592,7 +631,18 @@ async function handleRequest(req, res) {
       }
       const user = getSessionUser(req);
       if (!user) return sendJson(res, 401, { error: "Sign in to join the waitlist." });
-      const existing = findWaitlist(user.id);
+      const body = await readBody(req);
+      const email = String(body.email || user.email || "").trim().toLowerCase();
+      const displayName = String(body.displayName || user.username || "").trim().slice(0, 40);
+      const phone = String(body.phone || "").replace(/[\s()-]/g, "");
+      if (!displayName) return sendJson(res, 400, { error: "Display name is required." });
+      if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+        return sendJson(res, 400, { error: "Enter a valid email address." });
+      }
+      if (!validPhone(phone)) {
+        return sendJson(res, 400, { error: "Enter a valid phone number (10-15 digits, optional +)." });
+      }
+      const existing = readWaitlist().find((row) => row.userId === user.id || String(row.email || "").toLowerCase() === email);
       if (existing) {
         return sendJson(res, 200, {
           already: true,
@@ -600,23 +650,20 @@ async function handleRequest(req, res) {
           message: "You're already on the Game Arena Pro waitlist."
         });
       }
-      const body = await readBody(req);
-      let email = String(body.email || user.email || "").trim().toLowerCase();
-      if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-        return sendJson(res, 400, { error: "Enter a valid email, or leave it blank." });
-      }
       const leveled = withLevel(user);
       const row = {
         waitlistId: "wl_" + Date.now().toString(36) + crypto.randomBytes(3).toString("hex"),
         userId: user.id,
         username: user.username,
-        displayName: user.username,
-        email: email || null,
+        displayName,
+        email,
+        phone,
         currentPlan: user.plan || "free",
         gameArenaLevel: leveled.level,
+        xp: user.xp || 0,
         joinedAt: new Date().toISOString(),
         source: String(body.source || "dashboard").slice(0, 40),
-        status: "WAITLISTED"
+        status: "WAITING"
       };
       const list = readWaitlist();
       list.push(row);
@@ -631,6 +678,7 @@ async function handleRequest(req, res) {
         already: false,
         entry: safeWaitlistView(row),
         emailSent: mail.sent === true,
+        userEmailSent: mail.userSent === true,
         emailStatus: mail.sent ? "sent" : (mail.reason || "not_sent")
       });
     }
