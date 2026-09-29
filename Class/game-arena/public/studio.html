@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Studio — Game Arena</title>
+  <link rel="icon" href="/icons/favicon-32.png" type="image/png" />
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700&family=Outfit:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>tailwind.config={theme:{extend:{fontFamily:{display:['Orbitron','sans-serif'],sans:['Outfit','system-ui','sans-serif']}}}}</script>
+</head>
+<body class="min-h-screen bg-[#070b16] font-sans text-slate-200 antialiased">
+  <header class="border-b border-white/10">
+    <div class="mx-auto flex max-w-6xl items-center justify-between px-4 py-3">
+      <a href="/" class="inline-flex items-center"><img src="/brand/logo-wordmark.png" alt="Game Arena" class="h-8 w-auto" /></a>
+      <nav class="flex flex-wrap items-center gap-2 text-sm">
+        <a href="/dashboard" class="rounded-lg px-3 py-1.5 hover:bg-white/5">Arena</a>
+        <a href="/studio" class="rounded-lg bg-white/10 px-3 py-1.5 text-white">Studio</a>
+        <a href="/studio/community" class="rounded-lg px-3 py-1.5 hover:bg-white/5">Community</a>
+        <a href="/leaderboard" class="rounded-lg px-3 py-1.5 hover:bg-white/5">Ranks</a>
+      </nav>
+    </div>
+  </header>
+  <main class="mx-auto max-w-6xl px-4 py-10">
+    <p class="text-xs uppercase tracking-widest text-cyan-300">Game Arena Studio</p>
+    <h1 class="mt-2 font-display text-3xl font-bold text-white">CREATE. BUILD. PUBLISH.</h1>
+    <p class="mt-2 max-w-2xl text-slate-400">Build original games with blocks, test them instantly, then publish a public link. Free creators get a real toolkit — not a demo.</p>
+    <div class="mt-6 flex flex-wrap gap-3">
+      <button id="new-game" class="min-h-11 rounded-xl bg-cyan-400 px-4 font-semibold text-slate-950">Create New Game</button>
+      <a href="#templates" class="min-h-11 rounded-xl border border-white/15 px-4 py-2 text-sm font-semibold">Templates</a>
+      <a href="#published" class="min-h-11 rounded-xl border border-white/15 px-4 py-2 text-sm font-semibold">My Published Games</a>
+    </div>
+    <p id="limit-note" class="mt-3 text-sm text-amber-200"></p>
+    <section class="mt-10">
+      <h2 class="font-semibold text-white">My Projects</h2>
+      <div id="projects" class="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-3"></div>
+    </section>
+    <section id="templates" class="mt-12">
+      <h2 class="font-semibold text-white">Templates</h2>
+      <div id="tpl" class="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-5"></div>
+    </section>
+    <section id="published" class="mt-12">
+      <h2 class="font-semibold text-white">My Published Games</h2>
+      <div id="pub" class="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-3"></div>
+    </section>
+  </main>
+  <script src="/js/arena.js"></script>
+  <script src="/js/studio-engine.js"></script>
+  <script>
+    const tpls = Object.keys(StudioEngine.TEMPLATES);
+    document.getElementById("tpl").innerHTML = tpls.map((id) => {
+      const t = StudioEngine.TEMPLATES[id];
+      return `<button data-tpl="${id}" class="rounded-2xl border border-white/10 bg-white/[0.03] p-4 text-left hover:border-cyan-400/40">
+        <p class="text-xs uppercase tracking-wide text-cyan-300">${t.category}</p>
+        <p class="mt-1 font-semibold text-white">${t.name}</p>
+      </button>`;
+    }).join("");
+
+    async function create(template, title) {
+      const res = await fetch("/api/studio/projects", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "same-origin",
+        body: JSON.stringify({
+          title: title || StudioEngine.TEMPLATES[template].name,
+          template,
+          category: StudioEngine.TEMPLATES[template].category,
+          projectData: StudioEngine.fromTemplate(template, title)
+        })
+      });
+      const data = await res.json();
+      if (!res.ok) { document.getElementById("limit-note").textContent = data.error || "Could not create project."; return; }
+      location.href = "/studio/editor?id=" + encodeURIComponent(data.project.gameId);
+    }
+
+    document.getElementById("new-game").onclick = () => create("blank", "Untitled Game");
+    document.querySelectorAll("[data-tpl]").forEach((btn) => btn.onclick = () => create(btn.dataset.tpl));
+
+    Arena.getMe().then(async (user) => {
+      if (!user) { location.replace("/login?next=/studio"); return; }
+      const res = await fetch("/api/studio/projects", { credentials: "same-origin" });
+      const data = await res.json();
+      const projects = data.projects || [];
+      const drafts = projects.filter((p) => p.status !== "PUBLISHED");
+      const published = projects.filter((p) => p.status === "PUBLISHED");
+      const when = (iso) => iso ? new Date(iso).toLocaleString() : "";
+      const render = (list, empty) => list.length ? list.map((p) => `
+        <article class="rounded-2xl border border-white/10 bg-white/[0.03] p-4">
+          <p class="text-xs uppercase text-slate-500">${p.status} · ${p.category}</p>
+          <h3 class="mt-1 font-semibold text-white">${p.title}</h3>
+          <p class="mt-1 text-xs text-slate-400">${p.plays || 0} plays · ${p.likes || 0} likes</p>
+          <p class="mt-1 text-[11px] text-slate-500">Updated ${when(p.updatedAt)}</p>
+          <div class="mt-3 flex flex-wrap gap-2 text-sm">
+            <a class="rounded-lg bg-cyan-400/15 px-3 py-1.5 text-cyan-100" href="/studio/editor?id=${encodeURIComponent(p.gameId)}">Open</a>
+            <button data-rename="${p.gameId}" data-title="${(p.title || "").replace(/"/g, "")}" class="rounded-lg border border-white/15 px-3 py-1.5">Rename</button>
+            <button data-del="${p.gameId}" class="rounded-lg border border-rose-400/30 px-3 py-1.5 text-rose-200">Delete</button>
+            ${p.status === "PUBLISHED" ? `<a class="rounded-lg border border-white/15 px-3 py-1.5" href="${p.url}">Play</a>` : ""}
+          </div>
+        </article>`).join("") : `<p class="text-sm text-slate-500">${empty}</p>`;
+      document.getElementById("projects").innerHTML = render(projects, "No projects yet. Create a game or start from a template.");
+      document.getElementById("pub").innerHTML = render(published, "Nothing published yet.");
+      document.querySelectorAll("[data-del]").forEach((btn) => {
+        btn.onclick = async () => {
+          if (!confirm("Delete this project? This cannot be undone.")) return;
+          const res = await fetch("/api/studio/projects/" + encodeURIComponent(btn.dataset.del), { method: "DELETE", credentials: "same-origin" });
+          if (res.ok) location.reload();
+          else document.getElementById("limit-note").textContent = "Could not delete project.";
+        };
+      });
+      document.querySelectorAll("[data-rename]").forEach((btn) => {
+        btn.onclick = async () => {
+          const title = prompt("New title", btn.dataset.title || "");
+          if (!title) return;
+          const res = await fetch("/api/studio/projects/" + encodeURIComponent(btn.dataset.rename), {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            credentials: "same-origin",
+            body: JSON.stringify({ title })
+          });
+          if (res.ok) location.reload();
+        };
+      });
+      if (data.limits) {
+        document.getElementById("limit-note").textContent = "Plan " + (user.plan || "free").toUpperCase() + " · " + projects.length + "/" + data.limits.projects + " projects · " + published.length + "/" + data.limits.published + " published";
+      }
+    });
+  </script>
+</body>
+</html>

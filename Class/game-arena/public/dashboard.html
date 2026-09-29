@@ -22,6 +22,8 @@
       <div class="flex items-center gap-3 text-sm">
         <span data-username class="text-white"></span>
         <span data-user-level class="rounded-full border border-cyan-400/30 px-2 py-0.5 text-xs text-cyan-200"></span>
+        <a href="/studio" class="rounded-lg border border-white/10 px-3 py-1.5 hover:bg-white/5">Studio</a>
+        <a href="/studio/community" class="rounded-lg border border-white/10 px-3 py-1.5 hover:bg-white/5">Community</a>
         <a href="/leaderboard" class="rounded-lg border border-white/10 px-3 py-1.5 hover:bg-white/5">Ranks</a>
         <button id="logout" class="rounded-lg border border-white/10 px-3 py-1.5 hover:bg-white/5">Log out</button>
       </div>
@@ -71,12 +73,20 @@
               <tr><td class="py-1">Basic modes & stages</td><td>Yes</td><td>Yes</td></tr>
               <tr><td class="py-1">Extra stages & modes</td><td>Limited</td><td>Planned</td></tr>
               <tr><td class="py-1">Advanced stats & rewards</td><td>—</td><td>Planned</td></tr>
+              <tr><td class="py-1">Studio projects</td><td>5</td><td>50</td></tr>
+              <tr><td class="py-1">Published Studio games</td><td>3</td><td>40</td></tr>
             </tbody>
           </table>
         </div>
         <button id="join-waitlist" class="mt-5 min-h-11 w-full rounded-xl bg-amber-400 px-4 font-semibold text-slate-950">Join the waitlist</button>
         <p id="waitlist-note" class="mt-2 text-xs text-slate-400"></p>
       </article>
+    </section>
+    <section class="mt-8 rounded-2xl border border-cyan-400/20 bg-cyan-400/5 p-5">
+      <p class="text-xs uppercase tracking-widest text-cyan-300">Game Arena Studio</p>
+      <h2 class="mt-1 text-xl font-semibold text-white">Build your own games</h2>
+      <p class="mt-2 text-sm text-slate-400">Create with blocks, test instantly, then publish a public link. Free plan includes 5 projects and 3 published games.</p>
+      <a href="/studio" class="mt-4 inline-block min-h-11 rounded-xl bg-cyan-400 px-4 py-2 text-sm font-semibold text-slate-950">Open Studio</a>
     </section>
     <section class="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-3" id="games"></section>
   </main>

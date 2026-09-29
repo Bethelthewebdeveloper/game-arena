@@ -110,6 +110,8 @@ function ensureData() {
     seedFile(USERS_FILE, "users.json");
     seedFile(SCORES_FILE, "scores.json");
     if (!fs.existsSync(WAITLIST_FILE)) writeJson(WAITLIST_FILE, []);
+    const studioFile = path.join(DATA_DIR, "studio.json");
+    if (!fs.existsSync(studioFile)) writeJson(studioFile, []);
     fs.accessSync(DATA_DIR, fs.constants.W_OK);
     dataWritable = true;
   } catch (err) {
@@ -410,7 +412,8 @@ function parseJsonBody(raw) {
   catch { throw new Error("Invalid JSON"); }
 }
 
-function readBody(req) {
+function readBody(req, maxBytes) {
+  const limit = maxBytes || MAX_BODY;
   const pre = req.body !== undefined && req.body !== null && req.body !== ""
     ? req.body
     : (req.rawBody !== undefined && req.rawBody !== null && req.rawBody !== "" ? req.rawBody : null);
@@ -428,7 +431,7 @@ function readBody(req) {
     };
     const onData = (c) => {
       size += c.length;
-      if (size > MAX_BODY) {
+      if (size > limit) {
         finish(new Error("BODY_TOO_LARGE"));
         try { req.destroy(); } catch {}
         return;
@@ -675,6 +678,22 @@ async function notifyWaitlist(row) {
   return { sent: founderMail.sent === true, reason: founderMail.reason, userSent: userMail.sent === true };
 }
 
+const studioApi = require("./studio-api")({
+  sendJson,
+  readJson,
+  writeJson,
+  getSessionUser,
+  getSessionUserId,
+  rateLimit,
+  withLevel,
+  unlock,
+  USERS_FILE,
+  DATA_DIR,
+  serveStatic,
+  readBody,
+  levelFromXp
+});
+
 function validPhone(raw) {
   const s = String(raw || "").replace(/[\s()-]/g, "");
   return /^\+?[0-9]{10,15}$/.test(s);
@@ -697,6 +716,8 @@ async function handleRequest(req, res) {
       });
       return res.end();
     }
+
+    if (await studioApi.handle(req, res, url, method, pathname)) return;
 
     if (method === "GET" && pathname === "/api/me") {
       const user = getSessionUser(req);

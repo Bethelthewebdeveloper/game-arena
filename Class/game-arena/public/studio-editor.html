@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Studio Editor — Game Arena</title>
+  <link rel="icon" href="/icons/favicon-32.png" type="image/png" />
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700&family=Outfit:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>tailwind.config={theme:{extend:{fontFamily:{display:['Orbitron','sans-serif'],sans:['Outfit','system-ui','sans-serif']}}}}</script>
+</head>
+<body class="min-h-screen bg-[#070b16] font-sans text-slate-200 antialiased">
+  <header class="border-b border-white/10">
+    <div class="mx-auto flex max-w-[1400px] flex-wrap items-center gap-2 px-3 py-2">
+      <a href="/studio" class="text-sm text-slate-400 hover:text-white">Exit Studio</a>
+      <input id="title" class="min-w-[140px] flex-1 rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-white" maxlength="60" />
+      <button id="save" class="min-h-10 rounded-lg bg-white/10 px-3 text-sm font-semibold">Save</button>
+      <button id="test" class="min-h-10 rounded-lg bg-cyan-400 px-3 text-sm font-semibold text-slate-950">Test</button>
+      <button id="publish" class="min-h-10 rounded-lg border border-amber-300/40 px-3 text-sm font-semibold text-amber-200">Publish</button>
+      <button id="unpublish" class="min-h-10 rounded-lg border border-white/15 px-3 text-sm">Unpublish</button>
+    </div>
+  </header>
+  <p id="msg" class="px-4 py-2 text-sm text-cyan-200"></p>
+  <div class="mx-auto flex max-w-[1400px] gap-2 px-3 pb-2 lg:hidden">
+    <button data-pane="blocks" class="flex-1 rounded-lg bg-white/10 py-2 text-sm">Blocks</button>
+    <button data-pane="stage" class="flex-1 rounded-lg bg-cyan-400 py-2 text-sm text-slate-950">Canvas</button>
+    <button data-pane="props" class="flex-1 rounded-lg bg-white/10 py-2 text-sm">Props</button>
+  </div>
+  <div class="mx-auto grid max-w-[1400px] gap-3 px-3 pb-6 lg:grid-cols-[220px_minmax(0,1fr)_220px]">
+    <aside id="pane-blocks" class="rounded-2xl border border-white/10 bg-white/[0.03] p-3 max-lg:hidden">
+      <p class="text-xs uppercase tracking-wide text-slate-500">Blocks</p>
+      <div id="cats" class="mt-2 flex flex-wrap gap-1"></div>
+      <div id="blocks" class="mt-2 max-h-[50vh] space-y-1 overflow-auto"></div>
+      <p class="mt-3 text-xs uppercase tracking-wide text-slate-500">Assets</p>
+      <div id="assets" class="mt-2 flex flex-wrap gap-1"></div>
+    </aside>
+    <section id="pane-stage" class="rounded-2xl border border-white/10 bg-[#050814] p-3">
+      <canvas id="stage" class="mx-auto block w-full max-w-[420px] rounded-xl border border-white/10 bg-[#0b1220] touch-none" width="420" height="300"></canvas>
+      <div id="testbar" class="mt-2 hidden text-center">
+        <button id="stop" class="rounded-lg border border-white/15 px-3 py-1.5 text-sm">Back to edit</button>
+      </div>
+      <p class="mt-2 text-xs text-slate-500">Tap the player or use arrow keys in Test. Drag objects on the canvas while editing.</p>
+      <div id="script" class="mt-3 max-h-56 overflow-auto rounded-xl border border-white/10 p-2 text-xs"></div>
+    </section>
+    <aside id="pane-props" class="rounded-2xl border border-white/10 bg-white/[0.03] p-3 max-lg:hidden">
+      <p class="text-xs uppercase tracking-wide text-slate-500">Properties</p>
+      <label class="mt-2 block text-xs text-slate-400">Description</label>
+      <textarea id="desc" rows="3" class="mt-1 w-full rounded-lg border border-white/10 bg-white/5 px-2 py-1 text-sm"></textarea>
+      <label class="mt-2 block text-xs text-slate-400">Category</label>
+      <select id="category" class="mt-1 w-full rounded-lg border border-white/10 bg-[#0b1220] px-2 py-2 text-sm"></select>
+      <label class="mt-2 block text-xs text-slate-400">Backdrop</label>
+      <select id="bg" class="mt-1 w-full rounded-lg border border-white/10 bg-[#0b1220] px-2 py-2 text-sm"></select>
+      <label class="mt-2 block text-xs text-slate-400">Selected object</label>
+      <input id="objname" class="mt-1 w-full rounded-lg border border-white/10 bg-white/5 px-2 py-1 text-sm" />
+      <div class="mt-2 grid grid-cols-2 gap-2 text-xs">
+        <label>X <input id="ox" type="number" class="mt-1 w-full rounded bg-white/5 px-2 py-1" /></label>
+        <label>Y <input id="oy" type="number" class="mt-1 w-full rounded bg-white/5 px-2 py-1" /></label>
+        <label>W <input id="ow" type="number" class="mt-1 w-full rounded bg-white/5 px-2 py-1" /></label>
+        <label>H <input id="oh" type="number" class="mt-1 w-full rounded bg-white/5 px-2 py-1" /></label>
+      </div>
+      <div class="mt-3 flex flex-wrap gap-2 text-sm">
+        <button id="dup" class="rounded-lg border border-white/15 px-2 py-1">Duplicate</button>
+        <button id="del" class="rounded-lg border border-rose-400/30 px-2 py-1 text-rose-200">Delete</button>
+      </div>
+      <p class="mt-4 text-xs text-slate-500">Status: <span id="status">DRAFT</span></p>
+      <a id="public-link" class="mt-2 hidden text-xs text-cyan-300" href="#"></a>
+    </aside>
+  </div>
+  <script src="/js/arena.js"></script>
+  <script src="/js/studio-engine.js"></script>
+  <script>
+    const id = new URLSearchParams(location.search).get("id");
+    const canvas = document.getElementById("stage");
+    let project = null;
+    let selected = "player";
+    let runtime = null;
+    let testing = false;
+    let drag = null;
+    const msg = document.getElementById("msg");
+
+    function say(t) { msg.textContent = t || ""; }
+
+    const cats = [...new Set(StudioEngine.BLOCKS.map((b) => b.cat))];
+    let cat = cats[0];
+    document.getElementById("cats").innerHTML = cats.map((c) => `<button data-cat="${c}" class="rounded-full border border-white/15 px-2 py-0.5 text-[11px]">${c}</button>`).join("");
+    document.getElementById("assets").innerHTML = Object.keys(StudioEngine.KINDS).map((k) => `<button data-kind="${k}" class="rounded-lg border border-white/10 px-2 py-1 text-[11px]">${k}</button>`).join("");
+    ["Puzzle","Arcade","Quiz","Strategy","Adventure","Casual"].forEach((c) => {
+      const o = document.createElement("option"); o.value = c; o.textContent = c; document.getElementById("category").appendChild(o);
+    });
+
+    function scriptsOf() {
+      project.scripts = project.scripts || {};
+      project.scripts[selected] = project.scripts[selected] || [];
+      return project.scripts[selected];
+    }
+    function renderBlocks() {
+      document.getElementById("blocks").innerHTML = StudioEngine.BLOCKS.filter((b) => b.cat === cat).map((b) =>
+        `<button data-op="${b.op}" class="block w-full rounded-lg bg-white/5 px-2 py-1.5 text-left text-xs hover:bg-white/10">${b.label}</button>`
+      ).join("");
+    }
+    function renderScript() {
+      const list = scriptsOf();
+      document.getElementById("script").innerHTML = list.map((b, i) =>
+        `<div class="mb-1 flex items-center justify-between rounded bg-white/5 px-2 py-1">
+          <span>${b.op}${b.key ? " " + b.key : ""}${b.n != null ? " " + b.n : ""}${b.cond ? " if " + (b.cond.target || b.cond.op) : ""}</span>
+          <button data-rm="${i}" class="text-rose-300">x</button>
+        </div>`
+      ).join("") || "<p class='text-slate-500'>No blocks on this object yet.</p>";
+      document.querySelectorAll("[data-rm]").forEach((btn) => btn.onclick = () => { scriptsOf().splice(+btn.dataset.rm, 1); renderScript(); preview(); });
+    }
+    function preview() {
+      if (testing) return;
+      const rt = StudioEngine.createRuntime(project, canvas, { preview: true });
+      rt.draw();
+      rt.stop();
+    }
+    function select(oid) {
+      selected = oid;
+      const o = project.objects.find((x) => x.id === oid);
+      if (!o) return;
+      document.getElementById("objname").value = o.name || "";
+      document.getElementById("ox").value = Math.round(o.x);
+      document.getElementById("oy").value = Math.round(o.y);
+      document.getElementById("ow").value = o.w;
+      document.getElementById("oh").value = o.h;
+      renderScript();
+    }
+    function bindProps() {
+      ["ox","oy","ow","oh"].forEach((fid) => {
+        document.getElementById(fid).oninput = () => {
+          const o = project.objects.find((x) => x.id === selected);
+          if (!o) return;
+          o.x = Number(document.getElementById("ox").value) || 0;
+          o.y = Number(document.getElementById("oy").value) || 0;
+          o.w = Number(document.getElementById("ow").value) || 24;
+          o.h = Number(document.getElementById("oh").value) || 24;
+          preview();
+        };
+      });
+      document.getElementById("objname").oninput = () => {
+        const o = project.objects.find((x) => x.id === selected);
+        if (o) o.name = document.getElementById("objname").value.slice(0, 32);
+        preview();
+      };
+    }
+    canvas.addEventListener("pointerdown", (e) => {
+      if (testing) return;
+      const r = canvas.getBoundingClientRect();
+      const x = (e.clientX - r.left) * (420 / r.width);
+      const y = (e.clientY - r.top) * (300 / r.height);
+      const hit = [...project.objects].reverse().find((o) => x >= o.x && x <= o.x + o.w && y >= o.y && y <= o.y + o.h);
+      if (hit) { select(hit.id); drag = { id: hit.id, dx: x - hit.x, dy: y - hit.y }; }
+    });
+    canvas.addEventListener("pointermove", (e) => {
+      if (!drag || testing) return;
+      const r = canvas.getBoundingClientRect();
+      const x = (e.clientX - r.left) * (420 / r.width);
+      const y = (e.clientY - r.top) * (300 / r.height);
+      const o = project.objects.find((z) => z.id === drag.id);
+      if (!o) return;
+      o.x = Math.max(0, Math.min(420 - o.w, x - drag.dx));
+      o.y = Math.max(0, Math.min(300 - o.h, y - drag.dy));
+      select(o.id); preview();
+    });
+    window.addEventListener("pointerup", () => drag = null);
+
+    document.getElementById("cats").onclick = (e) => {
+      const b = e.target.closest("[data-cat]"); if (!b) return; cat = b.dataset.cat; renderBlocks();
+    };
+    document.getElementById("blocks").onclick = (e) => {
+      const b = e.target.closest("[data-op]"); if (!b) return;
+      const spec = StudioEngine.BLOCKS.find((x) => x.op === b.dataset.op);
+      const block = { op: spec.op, kids: spec.nest ? [] : undefined };
+      if (spec.fields && spec.fields.includes("n")) block.n = spec.op === "wait" ? 0.3 : 6;
+      if (spec.fields && spec.fields.includes("x")) { block.x = 80; block.y = 120; }
+      if (spec.fields && spec.fields.includes("key")) block.key = "ArrowRight";
+      if (spec.fields && spec.fields.includes("name")) { block.name = "score"; block.n = 1; }
+      if (spec.fields && spec.fields.includes("kind")) block.kind = "coin";
+      if (spec.cond) block.cond = StudioEngine.COND_PRESETS[0];
+      scriptsOf().push(block);
+      renderScript();
+    };
+    document.getElementById("assets").onclick = (e) => {
+      const b = e.target.closest("[data-kind]"); if (!b) return;
+      const spec = StudioEngine.KINDS[b.dataset.kind];
+      const obj = { id: StudioEngine.uid(b.dataset.kind), kind: b.dataset.kind, name: spec.label, x: 160, y: 140, w: spec.w, h: spec.h, color: spec.color };
+      project.objects.push(obj);
+      select(obj.id); preview();
+    };
+    document.getElementById("dup").onclick = () => {
+      const o = project.objects.find((x) => x.id === selected);
+      if (!o || o.kind === "player") return;
+      const copy = Object.assign({}, o, { id: StudioEngine.uid(o.kind), x: o.x + 16, y: o.y + 16 });
+      project.objects.push(copy); select(copy.id); preview();
+    };
+    document.getElementById("del").onclick = () => {
+      const o = project.objects.find((x) => x.id === selected);
+      if (!o || o.kind === "player") return say("The player object is required.");
+      project.objects = project.objects.filter((x) => x.id !== selected);
+      delete project.scripts[selected];
+      select("player"); preview();
+    };
+
+    async function save() {
+      project.title = document.getElementById("title").value;
+      const res = await fetch("/api/studio/projects/" + encodeURIComponent(id), {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        credentials: "same-origin",
+        body: JSON.stringify({
+          title: document.getElementById("title").value,
+          description: document.getElementById("desc").value,
+          category: document.getElementById("category").value,
+          projectData: project
+        })
+      });
+      const data = await res.json();
+      say(data.error || "Saved.");
+      return res.ok;
+    }
+    document.getElementById("save").onclick = save;
+    document.getElementById("test").onclick = async () => {
+      await save();
+      if (runtime) runtime.stop();
+      testing = true;
+      document.getElementById("testbar").classList.remove("hidden");
+      runtime = StudioEngine.createRuntime(project, canvas);
+      runtime.start();
+      say("Test mode. Arrow keys move. Tap canvas to interact.");
+    };
+    document.getElementById("stop").onclick = () => {
+      testing = false;
+      if (runtime) runtime.stop();
+      document.getElementById("testbar").classList.add("hidden");
+      preview();
+      say("Editing.");
+    };
+    document.getElementById("publish").onclick = async () => {
+      if (!(await save())) return;
+      const res = await fetch("/api/studio/projects/" + encodeURIComponent(id) + "/publish", { method: "POST", credentials: "same-origin" });
+      const data = await res.json();
+      say(data.error || data.message || "Published.");
+      if (data.project) showMeta(data.project);
+    };
+    document.getElementById("unpublish").onclick = async () => {
+      const res = await fetch("/api/studio/projects/" + encodeURIComponent(id) + "/unpublish", { method: "POST", credentials: "same-origin" });
+      const data = await res.json();
+      say(data.error || "Unpublished.");
+      if (data.project) showMeta(data.project);
+    };
+
+    function showMeta(row) {
+      document.getElementById("status").textContent = row.status;
+      const a = document.getElementById("public-link");
+      if (row.status === "PUBLISHED") {
+        a.hidden = false; a.classList.remove("hidden");
+        a.href = row.url; a.textContent = location.origin + row.url;
+      } else a.classList.add("hidden");
+    }
+
+    document.querySelectorAll("[data-pane]").forEach((btn) => {
+      btn.onclick = () => {
+        document.querySelectorAll("[data-pane]").forEach((b) => b.className = "flex-1 rounded-lg bg-white/10 py-2 text-sm");
+        btn.className = "flex-1 rounded-lg bg-cyan-400 py-2 text-sm text-slate-950";
+        ["blocks","stage","props"].forEach((id) => {
+          const el = document.getElementById("pane-" + id);
+          if (!el) return;
+          if (id === btn.dataset.pane) el.classList.remove("max-lg:hidden");
+          else if (id !== "stage") el.classList.add("max-lg:hidden");
+          if (id === "stage" && btn.dataset.pane !== "stage") el.classList.add("max-lg:hidden");
+          if (id === "stage" && btn.dataset.pane === "stage") el.classList.remove("max-lg:hidden");
+        });
+      };
+    });
+    Arena.getMe().then(async (user) => {
+      if (!user) { location.replace("/login?next=/studio/editor?id=" + encodeURIComponent(id || "")); return; }
+      if (!id) { location.replace("/studio"); return; }
+      const res = await fetch("/api/studio/projects/" + encodeURIComponent(id), { credentials: "same-origin" });
+      const data = await res.json();
+      if (!res.ok) { say(data.error || "Could not load project."); return; }
+      project = data.project.projectData || StudioEngine.blankProject(data.project.title);
+      project.title = data.project.title;
+      document.getElementById("title").value = data.project.title;
+      document.getElementById("desc").value = data.project.description || "";
+      document.getElementById("category").value = data.project.category || "Casual";
+      const bgSel = document.getElementById("bg");
+      if (bgSel && StudioEngine.BACKGROUNDS) {
+        bgSel.innerHTML = StudioEngine.BACKGROUNDS.map((b) => `<option value="${b.color}">${b.label}</option>`).join("");
+        bgSel.value = project.bg || "#0b1220";
+        bgSel.onchange = () => { project.bg = bgSel.value; preview(); };
+      }
+      showMeta(data.project);
+      selected = (project.objects[0] && project.objects[0].id) || "player";
+      renderBlocks(); bindProps(); select(selected); preview();
+    });
+  </script>
+</body>
+</html>

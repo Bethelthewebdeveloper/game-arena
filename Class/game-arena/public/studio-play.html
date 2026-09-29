@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Play — Game Arena Studio</title>
+  <link rel="icon" href="/icons/favicon-32.png" type="image/png" />
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700&family=Outfit:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>tailwind.config={theme:{extend:{fontFamily:{display:['Orbitron','sans-serif'],sans:['Outfit','system-ui','sans-serif']}}}}</script>
+</head>
+<body class="min-h-screen bg-[#070b16] font-sans text-slate-200 antialiased">
+  <header class="border-b border-white/10">
+    <div class="mx-auto flex max-w-4xl items-center justify-between px-4 py-3">
+      <a href="/" class="inline-flex"><img src="/brand/logo-wordmark.png" alt="Game Arena" class="h-8 w-auto" /></a>
+      <a href="/studio/community" class="text-sm hover:text-white">Community</a>
+    </div>
+  </header>
+  <main class="mx-auto max-w-4xl px-4 py-8">
+    <p id="err" class="text-rose-300"></p>
+    <h1 id="title" class="font-display text-3xl text-white"></h1>
+    <p id="meta" class="mt-2 text-sm text-slate-400"></p>
+    <p id="desc" class="mt-3 text-slate-300"></p>
+    <canvas id="stage" class="mx-auto mt-6 block w-full max-w-[420px] rounded-2xl border border-white/10" width="420" height="300"></canvas>
+    <div class="mt-4 flex flex-wrap gap-2">
+      <button id="play" class="min-h-11 rounded-xl bg-cyan-400 px-4 font-semibold text-slate-950">Play</button>
+      <button id="like" class="min-h-11 rounded-xl border border-white/15 px-4">Like</button>
+      <button id="share" class="min-h-11 rounded-xl border border-white/15 px-4">Share</button>
+      <a id="wa" class="min-h-11 rounded-xl border border-white/15 px-4 py-2 text-sm" target="_blank" rel="noopener">WhatsApp</a>
+    </div>
+    <p id="counts" class="mt-3 text-sm text-slate-400"></p>
+  </main>
+  <script src="/js/arena.js"></script>
+  <script src="/js/studio-engine.js"></script>
+  <script>
+    const slug = location.pathname.replace(/^\/g\//, "");
+    const canvas = document.getElementById("stage");
+    let runtime = null;
+    let projectRow = null;
+    fetch("/api/studio/public/" + encodeURIComponent(slug)).then((r) => r.json()).then(async (data) => {
+      if (!data.project) { document.getElementById("err").textContent = data.error || "Game not found."; return; }
+      projectRow = data.project;
+      document.title = projectRow.title + " — Game Arena";
+      document.getElementById("title").textContent = projectRow.title;
+      document.getElementById("meta").innerHTML = `by <a class="text-cyan-300" href="/u/${encodeURIComponent(projectRow.creatorName)}">${projectRow.creatorName}</a> · ${projectRow.category}`;
+      document.getElementById("desc").textContent = projectRow.description || "";
+      document.getElementById("counts").textContent = (projectRow.plays || 0) + " plays · " + (projectRow.likes || 0) + " likes";
+      const link = location.href;
+      document.getElementById("wa").href = "https://wa.me/?text=" + encodeURIComponent(projectRow.title + " " + link);
+      const rt = StudioEngine.createRuntime(projectRow.projectData, canvas);
+      rt.draw(); rt.stop();
+      document.getElementById("play").onclick = async () => {
+        if (runtime) runtime.stop();
+        runtime = StudioEngine.createRuntime(projectRow.projectData, canvas);
+        runtime.start();
+        const p = await fetch("/api/studio/projects/" + encodeURIComponent(projectRow.gameId) + "/play", { method: "POST", credentials: "same-origin" });
+        const d = await p.json();
+        if (d.plays != null) document.getElementById("counts").textContent = d.plays + " plays · " + (projectRow.likes || 0) + " likes";
+      };
+      document.getElementById("like").onclick = async () => {
+        const res = await fetch("/api/studio/projects/" + encodeURIComponent(projectRow.gameId) + "/like", { method: "POST", credentials: "same-origin" });
+        const d = await res.json();
+        if (res.status === 401) { location.href = "/login?next=" + encodeURIComponent(location.pathname); return; }
+        if (d.likes != null) {
+          projectRow.likes = d.likes;
+          document.getElementById("counts").textContent = (projectRow.plays || 0) + " plays · " + d.likes + " likes";
+        }
+      };
+      document.getElementById("share").onclick = async () => {
+        if (navigator.share) { try { await navigator.share({ title: projectRow.title, url: link }); } catch {} }
+        else { await navigator.clipboard.writeText(link); document.getElementById("err").textContent = "Link copied."; }
+      };
+    });
+  </script>
+</body>
+</html>
