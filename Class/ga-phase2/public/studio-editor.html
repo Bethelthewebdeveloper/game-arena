@@ -240,7 +240,8 @@
       if (!(await save())) return;
       const res = await fetch("/api/studio/projects/" + encodeURIComponent(id) + "/publish", { method: "POST", credentials: "same-origin" });
       const data = await res.json();
-      say(data.error || data.message || "Published.");
+      if (data.project && data.project.url) say(data.error || ((data.message || "Published.") + " " + location.origin + data.project.url));
+      else say(data.error || data.message || "Published.");
       if (data.project) showMeta(data.project);
     };
     document.getElementById("unpublish").onclick = async () => {

@@ -85,17 +85,19 @@
       const drafts = projects.filter((p) => p.status !== "PUBLISHED");
       const published = projects.filter((p) => p.status === "PUBLISHED");
       const when = (iso) => iso ? new Date(iso).toLocaleString() : "";
+      const esc = (s) => String(s == null ? "" : s).replace(/[&<>"']/g, (c) => ({ "&": "&", "<": "<", ">": ">", '"': """, "'": "&#39;" }[c]));
       const render = (list, empty) => list.length ? list.map((p) => `
         <article class="rounded-2xl border border-white/10 bg-white/[0.03] p-4">
-          <p class="text-xs uppercase text-slate-500">${p.status} · ${p.category}</p>
-          <h3 class="mt-1 font-semibold text-white">${p.title}</h3>
+          <p class="text-xs uppercase text-slate-500">${esc(p.status)} · ${esc(p.category)}</p>
+          <h3 class="mt-1 font-semibold text-white">${esc(p.title)}</h3>
           <p class="mt-1 text-xs text-slate-400">${p.plays || 0} plays · ${p.likes || 0} likes</p>
-          <p class="mt-1 text-[11px] text-slate-500">Updated ${when(p.updatedAt)}</p>
+          <p class="mt-1 text-[11px] text-slate-500">Updated ${esc(when(p.updatedAt))}</p>
           <div class="mt-3 flex flex-wrap gap-2 text-sm">
-            <a class="rounded-lg bg-cyan-400/15 px-3 py-1.5 text-cyan-100" href="/studio/editor?id=${encodeURIComponent(p.gameId)}">Open</a>
-            <button data-rename="${p.gameId}" data-title="${(p.title || "").replace(/"/g, "")}" class="rounded-lg border border-white/15 px-3 py-1.5">Rename</button>
-            <button data-del="${p.gameId}" class="rounded-lg border border-rose-400/30 px-3 py-1.5 text-rose-200">Delete</button>
-            ${p.status === "PUBLISHED" ? `<a class="rounded-lg border border-white/15 px-3 py-1.5" href="${p.url}">Play</a>` : ""}
+            <a class="min-h-10 rounded-lg bg-cyan-400/15 px-3 py-1.5 text-cyan-100" href="/studio/editor?id=${encodeURIComponent(p.gameId)}">Edit</a>
+            <button data-rename="${esc(p.gameId)}" data-title="${esc(p.title || "")}" class="min-h-10 rounded-lg border border-white/15 px-3 py-1.5">Rename</button>
+            <button data-del="${esc(p.gameId)}" class="min-h-10 rounded-lg border border-rose-400/30 px-3 py-1.5 text-rose-200">Delete</button>
+            ${p.status === "PUBLISHED" ? `<a class="min-h-10 rounded-lg border border-white/15 px-3 py-1.5" href="${esc(p.url)}">Play</a><button data-copy="${esc(p.url)}" class="min-h-10 rounded-lg border border-white/15 px-3 py-1.5">Copy link</button>` : ""}
+            ${p.status === "PUBLISHED" ? `<button data-unpub="${esc(p.gameId)}" class="min-h-10 rounded-lg border border-white/15 px-3 py-1.5">Unpublish</button>` : ""}
           </div>
         </article>`).join("") : `<p class="text-sm text-slate-500">${empty}</p>`;
       document.getElementById("projects").innerHTML = render(projects, "No projects yet. Create a game or start from a template.");
@@ -106,6 +108,20 @@
           const res = await fetch("/api/studio/projects/" + encodeURIComponent(btn.dataset.del), { method: "DELETE", credentials: "same-origin" });
           if (res.ok) location.reload();
           else document.getElementById("limit-note").textContent = "Could not delete project.";
+        };
+      });
+      document.querySelectorAll("[data-copy]").forEach((btn) => {
+        btn.onclick = async () => {
+          const link = location.origin + btn.dataset.copy;
+          try { await navigator.clipboard.writeText(link); document.getElementById("limit-note").textContent = "Link copied."; }
+          catch { document.getElementById("limit-note").textContent = link; }
+        };
+      });
+      document.querySelectorAll("[data-unpub]").forEach((btn) => {
+        btn.onclick = async () => {
+          const res = await fetch("/api/studio/projects/" + encodeURIComponent(btn.dataset.unpub) + "/unpublish", { method: "POST", credentials: "same-origin" });
+          if (res.ok) location.reload();
+          else document.getElementById("limit-note").textContent = "Could not unpublish.";
         };
       });
       document.querySelectorAll("[data-rename]").forEach((btn) => {

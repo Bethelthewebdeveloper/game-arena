@@ -101,6 +101,55 @@ function sanitizeCond(c) {
   };
 }
 
+function previewOf(row) {
+  const data = row && row.projectData ? row.projectData : {};
+  const objects = Array.isArray(data.objects) ? data.objects.slice(0, 16) : [];
+  return {
+    bg: /^#[0-9a-fA-F]{3,8}$/.test(String(data.bg || "")) ? data.bg : "#0b1220",
+    dots: objects.map((o) => ({
+      x: Math.max(0, Math.min(100, ((Number(o.x) || 0) / 420) * 100)),
+      y: Math.max(0, Math.min(100, ((Number(o.y) || 0) / 300) * 100)),
+      c: /^#[0-9a-fA-F]{3,8}$/.test(String(o.color || "")) ? o.color : "#22d3ee",
+      k: String(o.kind || "deco").slice(0, 16)
+    }))
+  };
+}
+
+function uniqueSlug(list, title, gameId) {
+  const base = slugify(title, gameId);
+  const taken = new Set(list.filter((p) => p && !p.deleted).map((p) => p.slug));
+  if (!taken.has(base)) return base;
+  let n = 2;
+  while (taken.has(base + "-" + n)) n += 1;
+  return base + "-" + n;
+}
+
+function publishErrors(row) {
+  const title = String(row && row.title || "").trim();
+  if (title.length < 2) return "Add a game title before publishing.";
+  const data = row.projectData;
+  if (!data || typeof data !== "object" || data.version !== 1) return "Project data is missing or invalid.";
+  if (!Array.isArray(data.objects) || !data.objects.length) return "This project has no playable objects yet.";
+  if (!data.objects.some((o) => o && o.kind === "player")) return "A player object is required before publishing.";
+  if (data.scripts && typeof data.scripts === "object") {
+    const blob = JSON.stringify(data.scripts);
+    if (/<script|javascript:|function\s*\(|eval\(/i.test(blob)) return "Project scripts must stay inside Studio blocks.";
+  }
+  return "";
+}
+
+function safeAvatar(value) {
+  const raw = String(value || "").trim();
+  if (/^https:\/\/[a-z0-9.-]+\//i.test(raw) && raw.length < 300) return raw;
+  if (raw.startsWith("/brand/") || raw.startsWith("/icons/")) return raw.slice(0, 120);
+  return "";
+}
+
+function initialsOf(name) {
+  const parts = String(name || "GA").trim().split(/\s+/).slice(0, 2);
+  return parts.map((p) => p[0] || "").join("").toUpperCase().slice(0, 2) || "GA";
+}
+
 function publicProject(row, extra) {
   if (!row) return null;
   return Object.assign({
@@ -117,7 +166,8 @@ function publicProject(row, extra) {
     publishedAt: row.publishedAt || null,
     plays: row.plays || 0,
     likes: (row.likeUsers && row.likeUsers.length) || row.likes || 0,
-    url: "/g/" + row.slug
+    url: "/g/" + row.slug,
+    preview: previewOf(row)
   }, extra || {});
 }
 
@@ -240,7 +290,7 @@ module.exports = function attachStudio(ctx) {
       const gameId = "g_" + Date.now().toString(36) + crypto.randomBytes(3).toString("hex");
       const row = {
         gameId,
-        slug: slugify(title, gameId),
+        slug: uniqueSlug(list, title, gameId),
         creatorId: user.id,
         creatorName: user.username,
         title,
@@ -327,10 +377,9 @@ module.exports = function attachStudio(ctx) {
       if (method === "POST" && action === "publish") {
         const user = getSessionUser(req);
         if (!user || user.id !== row.creatorId) { sendJson(res, 403, { error: "Only the creator can publish this game." }); return true; }
-        if (!row.title || row.title.length < 2) { sendJson(res, 400, { error: "Add a game title before publishing." }); return true; }
-        if (!row.projectData || !Array.isArray(row.projectData.objects) || !row.projectData.objects.length) {
-          sendJson(res, 400, { error: "This project has no playable objects yet." }); return true;
-        }
+        const invalid = publishErrors(row);
+        if (invalid) { sendJson(res, 400, { error: invalid }); return true; }
+        if (!row.slug) row.slug = uniqueSlug(list, row.title, row.gameId);
         const cap = limitsFor(user);
         const publishedCount = list.filter((p) => p.creatorId === user.id && p.status === "PUBLISHED" && p.gameId !== row.gameId && !p.deleted).length;
         if (publishedCount >= cap.published) {
@@ -427,7 +476,12 @@ module.exports = function attachStudio(ctx) {
       } else {
         list.sort((a, b) => String(b.publishedAt || b.updatedAt).localeCompare(String(a.publishedAt || a.updatedAt)));
       }
-      sendJson(res, 200, { games: list.slice(0, 60).map((p) => publicProject(p)) });
+      const viewer = getSessionUser(req);
+      sendJson(res, 200, {
+        games: list.slice(0, 60).map((p) => publicProject(p, {
+          liked: !!(viewer && Array.isArray(p.likeUsers) && p.likeUsers.includes(viewer.id))
+        }))
+      });
       return true;
     }
 
@@ -451,7 +505,9 @@ module.exports = function attachStudio(ctx) {
         creator: {
           username: creator.username,
           level: ctx.levelFromXp ? ctx.levelFromXp(creator.xp) : 1,
-          bio: creator.bio || "",
+          bio: String(creator.bio || "").slice(0, 180),
+          avatar: safeAvatar(creator.avatar),
+          initials: initialsOf(creator.username),
           achievements: (creator.achievements || []).filter((id) => String(id).startsWith("studio-")),
           published: games.length,
           plays,

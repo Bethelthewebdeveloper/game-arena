@@ -19,7 +19,8 @@
   </header>
   <main class="mx-auto max-w-4xl px-4 py-8">
     <p id="err" class="text-rose-300"></p>
-    <h1 id="title" class="font-display text-3xl text-white"></h1>
+    <p id="cat" class="text-xs uppercase tracking-widest text-cyan-300"></p>
+    <h1 id="title" class="mt-1 font-display text-3xl text-white"></h1>
     <p id="meta" class="mt-2 text-sm text-slate-400"></p>
     <p id="desc" class="mt-3 text-slate-300"></p>
     <canvas id="stage" class="mx-auto mt-6 block w-full max-w-[420px] rounded-2xl border border-white/10" width="420" height="300"></canvas>
@@ -27,28 +28,37 @@
       <button id="play" class="min-h-11 rounded-xl bg-cyan-400 px-4 font-semibold text-slate-950">Play</button>
       <button id="like" class="min-h-11 rounded-xl border border-white/15 px-4">Like</button>
       <button id="share" class="min-h-11 rounded-xl border border-white/15 px-4">Share</button>
+      <button id="copy" class="min-h-11 rounded-xl border border-white/15 px-4">Copy link</button>
       <a id="wa" class="min-h-11 rounded-xl border border-white/15 px-4 py-2 text-sm" target="_blank" rel="noopener">WhatsApp</a>
+      <a id="tg" class="min-h-11 rounded-xl border border-white/15 px-4 py-2 text-sm" target="_blank" rel="noopener">Telegram</a>
     </div>
     <p id="counts" class="mt-3 text-sm text-slate-400"></p>
   </main>
   <script src="/js/arena.js"></script>
   <script src="/js/studio-engine.js"></script>
   <script>
-    const slug = location.pathname.replace(/^\/g\//, "");
+    const slug = location.pathname.replace(/^\/g\//, "").split("/")[0];
     const canvas = document.getElementById("stage");
     let runtime = null;
     let projectRow = null;
+    function esc(s) { return String(s == null ? "" : s).replace(/[&<>"']/g, (c) => ({ "&": "&", "<": "<", ">": ">", '"': """, "'": "&#39;" }[c])); }
+    function counts() {
+      document.getElementById("counts").textContent = (projectRow.plays || 0) + " plays · " + (projectRow.likes || 0) + " likes";
+    }
     fetch("/api/studio/public/" + encodeURIComponent(slug)).then((r) => r.json()).then(async (data) => {
       if (!data.project) { document.getElementById("err").textContent = data.error || "Game not found."; return; }
       projectRow = data.project;
       document.title = projectRow.title + " — Game Arena";
       document.getElementById("title").textContent = projectRow.title;
-      document.getElementById("meta").innerHTML = `by <a class="text-cyan-300" href="/u/${encodeURIComponent(projectRow.creatorName)}">${projectRow.creatorName}</a> · ${projectRow.category}`;
+      document.getElementById("cat").textContent = projectRow.category || "Casual";
+      document.getElementById("meta").innerHTML = `by <a class="text-cyan-300" href="/u/${encodeURIComponent(projectRow.creatorName)}">${esc(projectRow.creatorName)}</a>`;
       document.getElementById("desc").textContent = projectRow.description || "";
-      document.getElementById("counts").textContent = (projectRow.plays || 0) + " plays · " + (projectRow.likes || 0) + " likes";
-      const link = location.href;
-      document.getElementById("wa").href = "https://wa.me/?text=" + encodeURIComponent(projectRow.title + " " + link);
-      const rt = StudioEngine.createRuntime(projectRow.projectData, canvas);
+      counts();
+      const link = location.origin + projectRow.url;
+      const shareText = projectRow.title + " on Game Arena";
+      document.getElementById("wa").href = "https://wa.me/?text=" + encodeURIComponent(shareText + " " + link);
+      document.getElementById("tg").href = "https://t.me/share/url?url=" + encodeURIComponent(link) + "&text=" + encodeURIComponent(shareText);
+      const rt = StudioEngine.createRuntime(projectRow.projectData, canvas, { preview: true });
       rt.draw(); rt.stop();
       document.getElementById("play").onclick = async () => {
         if (runtime) runtime.stop();
@@ -56,20 +66,22 @@
         runtime.start();
         const p = await fetch("/api/studio/projects/" + encodeURIComponent(projectRow.gameId) + "/play", { method: "POST", credentials: "same-origin" });
         const d = await p.json();
-        if (d.plays != null) document.getElementById("counts").textContent = d.plays + " plays · " + (projectRow.likes || 0) + " likes";
+        if (d.plays != null) { projectRow.plays = d.plays; counts(); }
       };
       document.getElementById("like").onclick = async () => {
         const res = await fetch("/api/studio/projects/" + encodeURIComponent(projectRow.gameId) + "/like", { method: "POST", credentials: "same-origin" });
         const d = await res.json();
         if (res.status === 401) { location.href = "/login?next=" + encodeURIComponent(location.pathname); return; }
-        if (d.likes != null) {
-          projectRow.likes = d.likes;
-          document.getElementById("counts").textContent = (projectRow.plays || 0) + " plays · " + d.likes + " likes";
-        }
+        if (d.likes != null) { projectRow.likes = d.likes; counts(); document.getElementById("like").textContent = d.liked ? "Liked" : "Like"; }
       };
+      async function copyLink() {
+        try { await navigator.clipboard.writeText(link); document.getElementById("err").textContent = "Link copied."; }
+        catch { document.getElementById("err").textContent = link; }
+      }
+      document.getElementById("copy").onclick = copyLink;
       document.getElementById("share").onclick = async () => {
-        if (navigator.share) { try { await navigator.share({ title: projectRow.title, url: link }); } catch {} }
-        else { await navigator.clipboard.writeText(link); document.getElementById("err").textContent = "Link copied."; }
+        if (navigator.share) { try { await navigator.share({ title: projectRow.title, text: shareText, url: link }); return; } catch {} }
+        copyLink();
       };
     });
   </script>

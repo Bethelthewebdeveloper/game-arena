@@ -52,3 +52,16 @@ Waitlist records save without email. Founder mail is sent only when these Vercel
 - WAITLIST_NOTIFICATION_EMAIL=betheljahbuikemonuoha@gmail.com
 
 If those are missing, the user still joins the waitlist and sees that the notification could not be delivered. Passwords are never stored or emailed.
+
+
+## Studio Phase 2
+
+Published games use a stable public URL at `/g/<slug>`. Duplicate titles get a unique slug from the internal game id.
+
+- DRAFT stays private.
+- PUBLISHED appears on Community Games and the creator profile.
+- UNPUBLISHED is removed from public discovery and kept for the creator.
+- Likes require a signed-in player and toggle once per account.
+- Play counts increase once per player (or address) per hour, not on every refresh.
+- Studio blocks are data, not creator JavaScript.
+- Pro remains Join the Waitlist. There is no checkout.
