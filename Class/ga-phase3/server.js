@@ -779,6 +779,19 @@ async function handleRequest(req, res) {
       list.push(row);
       try {
         writeJson(WAITLIST_FILE, list);
+        const users = readJson(USERS_FILE);
+        const stored = users.find((u) => u.id === user.id);
+        if (stored) {
+          stored.waitlistStatus = "WAITING";
+          stored.subscriptionStatus = stored.subscriptionStatus === "active" ? "active" : "none";
+          stored.paymentProvider = null;
+          if (stored.plan === "pro") {
+            /* existing Pro flag is left unchanged; waitlist never grants it */
+          } else {
+            stored.plan = "free";
+          }
+          writeJson(USERS_FILE, users);
+        }
         console.log("waitlist saved", { waitlistId: row.waitlistId, userId: row.userId });
       } catch (err) {
         console.log("waitlist save failed", { message: String(err && err.message ? err.message : err) });

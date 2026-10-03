@@ -32,6 +32,11 @@
       <a href="#published" class="min-h-11 rounded-xl border border-white/15 px-4 py-2 text-sm font-semibold">My Published Games</a>
     </div>
     <p id="limit-note" class="mt-3 text-sm text-amber-200"></p>
+    <section id="analytics" class="mt-8 rounded-2xl border border-white/10 bg-white/[0.03] p-5">
+      <p class="text-xs uppercase tracking-widest text-cyan-300">Creator analytics</p>
+      <div id="analytics-body" class="mt-3 text-sm text-slate-300">Loading real Studio stats…</div>
+      <button id="analytics-waitlist" class="mt-4 hidden min-h-11 rounded-xl bg-amber-400 px-4 font-semibold text-slate-950">Join the waitlist</button>
+    </section>
     <section class="mt-10">
       <h2 class="font-semibold text-white">My Projects</h2>
       <div id="projects" class="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-3"></div>
@@ -138,7 +143,18 @@
         };
       });
       if (data.limits) {
-        document.getElementById("limit-note").textContent = "Plan " + (user.plan || "free").toUpperCase() + " · " + projects.length + "/" + data.limits.projects + " projects · " + published.length + "/" + data.limits.published + " published";
+        const mb = data.limits.storageBytes ? Math.round(data.limits.storageBytes / 1048576) : 0;
+        document.getElementById("limit-note").textContent = "Plan " + (user.plan || "free").toUpperCase() + " · " + projects.length + "/" + data.limits.projects + " projects · " + published.length + "/" + data.limits.published + " published · " + mb + " MB storage";
+      }
+      const stats = await fetch("/api/studio/analytics", { credentials: "same-origin" }).then((r) => r.json());
+      const a = stats.analytics || {};
+      const totals = a.totals || {};
+      const top = a.basicPerformance;
+      document.getElementById("analytics-body").innerHTML = "Plays " + (totals.plays || 0) + " · Published " + (totals.published || 0) + " · Likes " + (totals.likes || 0) + (top ? " · Top game " + top.title + " (" + top.plays + " plays)" : "") + (a.analytics === "advanced" && a.byGame ? "<br>Pro comparison is based on your published games." : "<br>Basic analytics. Detailed trends stay on Pro.");
+      if (stats.upgrade === "waitlist") {
+        const btn = document.getElementById("analytics-waitlist");
+        btn.classList.remove("hidden");
+        btn.onclick = () => Arena.openWaitlist(user, "studio-analytics");
       }
     });
   </script>

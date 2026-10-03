@@ -23,24 +23,37 @@
   <main class="mx-auto max-w-6xl px-4 py-10">
     <h1 class="font-display text-3xl text-white">COMMUNITY GAMES</h1>
     <p class="mt-2 text-slate-400">Only published creator games appear here. Popularity is based on real plays and likes.</p>
-    <div id="cats" class="mt-6 flex flex-wrap gap-2"></div>
+    <form id="search" class="mt-6 flex flex-wrap gap-2">
+      <input id="q" class="min-h-11 flex-1 rounded-xl border border-white/10 bg-white/5 px-3" placeholder="Search title, creator, or category" />
+      <button class="min-h-11 rounded-xl bg-cyan-400 px-4 font-semibold text-slate-950">Search</button>
+    </form>
+    <div id="sorts" class="mt-4 flex flex-wrap gap-2"></div>
+    <div id="cats" class="mt-3 flex flex-wrap gap-2"></div>
     <section id="grid" class="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3"></section>
   </main>
   <script>
-    const cats = ["New", "Popular", "Puzzle", "Arcade", "Quiz", "Strategy", "Adventure", "Casual"];
+    const sorts = ["New", "Trending", "Popular", "Recently Played", "Recommended"];
+    const cats = ["Puzzle", "Arcade", "Quiz", "Strategy", "Adventure", "Casual"];
+    let sort = "New";
+    let cat = "";
+    let query = "";
     function esc(s) { return String(s == null ? "" : s).replace(/[&<>"']/g, (c) => ({ "&": "&", "<": "<", ">": ">", '"': """, "'": "&#39;" }[c])); }
     function thumb(g) {
       const preview = g.preview || { bg: "#0b1220", dots: [] };
       const dots = (preview.dots || []).map((d) => `<span style="left:${Number(d.x)||0}%;top:${Number(d.y)||0}%;background:${esc(d.c)}" class="absolute h-2.5 w-2.5 -translate-x-1/2 -translate-y-1/2 rounded-sm"></span>`).join("");
       return `<div class="relative h-28 overflow-hidden rounded-xl border border-white/10" style="background:${esc(preview.bg)}">${dots}</div>`;
     }
-    function paintCats(current) {
-      document.getElementById("cats").innerHTML = cats.map((c) => `<button data-c="${c}" class="min-h-10 rounded-full border px-3 py-1 text-sm ${c === current ? "border-cyan-300 bg-cyan-400/15 text-white" : "border-white/15"}">${c}</button>`).join("");
+    function paint() {
+      document.getElementById("sorts").innerHTML = sorts.map((c) => `<button data-s="${c}" class="min-h-10 rounded-full border px-3 py-1 text-sm ${c === sort && !cat ? "border-cyan-300 bg-cyan-400/15 text-white" : "border-white/15"}">${c}</button>`).join("");
+      document.getElementById("cats").innerHTML = cats.map((c) => `<button data-c="${c}" class="min-h-10 rounded-full border px-3 py-1 text-sm ${c === cat ? "border-cyan-300 bg-cyan-400/15 text-white" : "border-white/15"}">${c}</button>`).join("");
     }
-    async function load(cat) {
-      paintCats(cat);
-      const q = cat === "Popular" ? "sort=popular" : (cat === "New" ? "sort=new" : "category=" + encodeURIComponent(cat));
-      const res = await fetch("/api/studio/community?" + q, { credentials: "same-origin" });
+    async function load() {
+      paint();
+      const params = new URLSearchParams();
+      if (cat) params.set("category", cat);
+      else params.set("sort", sort === "Recently Played" ? "recent" : sort.toLowerCase());
+      if (query) params.set("q", query);
+      const res = await fetch("/api/studio/community?" + params.toString(), { credentials: "same-origin" });
       const data = await res.json();
       const games = data.games || [];
       document.getElementById("grid").innerHTML = games.length ? games.map((g) => `
@@ -52,8 +65,10 @@
           <a class="mt-3 inline-flex min-h-11 items-center rounded-lg bg-cyan-400/15 px-3 py-2 text-sm text-cyan-100" href="${esc(g.url)}">Play</a>
         </article>`).join("") : `<p class="text-sm text-slate-500">No published games in this category yet.</p>`;
     }
-    document.getElementById("cats").onclick = (e) => { const b = e.target.closest("[data-c]"); if (b) load(b.dataset.c); };
-    load("New");
+    document.getElementById("sorts").onclick = (e) => { const b = e.target.closest("[data-s]"); if (!b) return; sort = b.dataset.s; cat = ""; load(); };
+    document.getElementById("cats").onclick = (e) => { const b = e.target.closest("[data-c]"); if (!b) return; cat = b.dataset.c; load(); };
+    document.getElementById("search").onsubmit = (e) => { e.preventDefault(); query = document.getElementById("q").value.trim(); load(); };
+    load();
   </script>
 </body>
 </html>

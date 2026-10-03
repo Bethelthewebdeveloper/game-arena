@@ -65,3 +65,12 @@ Published games use a stable public URL at `/g/<slug>`. Duplicate titles get a u
 - Play counts increase once per player (or address) per hour, not on every refresh.
 - Studio blocks are data, not creator JavaScript.
 - Pro remains Join the Waitlist. There is no checkout.
+
+
+## Studio Phase 3
+
+Free Studio includes 5 projects, 5 published games, 100 MB storage, 10 custom assets per game, up to 20 levels, and basic analytics. Playing, sharing, likes, public links, and creator profiles stay available.
+
+Pro limits and advanced analytics exist as entitlements, but there is no payment provider. Join the Waitlist does not activate Pro, create a subscription, or write a receipt.
+
+Account, plan, subscription status, waitlist status, and feature entitlements are stored separately so a real provider can be added later.

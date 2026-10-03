@@ -47,7 +47,7 @@
       const avatar = document.getElementById("avatar");
       if (c.avatar) avatar.innerHTML = `<img src="${esc(c.avatar)}" alt="" class="h-full w-full object-cover" />`;
       else avatar.textContent = c.initials || "GA";
-      document.getElementById("ach").innerHTML = (c.achievements || []).map((id) => `<li class="rounded-full border border-white/15 px-2 py-1">${esc(id)}</li>`).join("");
+      document.getElementById("ach").innerHTML = (c.achievements || []).map((item) => `<li class="rounded-full border border-white/15 px-2 py-1">${esc(item.label || item.id || item)}</li>`).join("");
       document.getElementById("grid").innerHTML = (data.games || []).map((g) => `
         <article class="rounded-2xl border border-white/10 p-4">
           ${thumb(g)}
