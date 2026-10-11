@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <script>!function(w,d,s,u,n,a,b){if(w[n])return;a=w[n]={q:[],t:+new Date,s:[],o:u,track:function(){a.q.push([+new Date].concat([].slice.call(arguments)))},setScope:function(){a.s=[].slice.call(arguments).filter(function(x){return typeof x==="string"});a.q.push([+new Date,"setScope"].concat(a.s))},scope:function(){var c=[].slice.call(arguments);return{track:function(){a.q.push([+new Date].concat([].slice.call(arguments)).concat([{__scope:c}]))}}}};b=d.createElement(s);b.async=1;b.src=u+"/s.js";d.getElementsByTagName(s)[0].parentNode.insertBefore(b,d.getElementsByTagName(s)[0])}(window,document,"script","https://t.whop.tw","whop");whop.setScope("biz_zI77NtsVMXsSId");whop.track("page");</script>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#070b16" />
+  <link rel="icon" href="/icons/favicon-32.png" type="image/png" />
+  <link rel="manifest" href="/manifest.webmanifest" />
+  <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" />
+
+  <title>Arena — Game Arena</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700&family=Outfit:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>tailwind.config={theme:{extend:{fontFamily:{display:['Orbitron','sans-serif'],sans:['Outfit','system-ui','sans-serif']}}}}</script>
+</head>
+<body class="min-h-screen bg-[#070b16] font-sans text-slate-200 antialiased">
+  <header class="border-b border-white/10">
+    <div class="mx-auto flex max-w-6xl items-center justify-between px-4 py-3">
+      <a href="/" class="inline-flex items-center"><img src="/brand/logo-wordmark.png" alt="Game Arena" width="170" height="54" class="h-8 w-auto sm:h-9" /></a>
+      <div class="flex items-center gap-3 text-sm">
+        <span data-username class="text-white"></span>
+        <span data-user-level class="rounded-full border border-cyan-400/30 px-2 py-0.5 text-xs text-cyan-200"></span>
+        <a href="/studio" class="rounded-lg border border-white/10 px-3 py-1.5 hover:bg-white/5">Studio</a>
+        <a href="/studio/community" class="rounded-lg border border-white/10 px-3 py-1.5 hover:bg-white/5">Community</a>
+        <a href="/leaderboard" class="rounded-lg border border-white/10 px-3 py-1.5 hover:bg-white/5">Ranks</a>
+        <button id="logout" class="rounded-lg border border-white/10 px-3 py-1.5 hover:bg-white/5">Log out</button>
+      </div>
+    </div>
+  </header>
+  <main class="mx-auto max-w-6xl px-4 py-10">
+    <h1 class="font-display text-3xl font-bold text-white">YOUR ARENA</h1>
+    <p class="mt-2 text-slate-400">Pick a game and keep building your shared progression.</p>
+    <section class="mt-8 grid gap-4 sm:grid-cols-3">
+      <div class="rounded-2xl border border-white/10 p-4">
+        <p class="flex items-center gap-1.5 text-xs uppercase tracking-wide text-slate-400"><span data-icon="badge" class="inline-flex text-cyan-300"></span>Level</p>
+        <p id="stat-level" class="mt-1 text-2xl font-semibold text-white">—</p>
+      </div>
+      <div class="rounded-2xl border border-white/10 p-4">
+        <p class="flex items-center gap-1.5 text-xs uppercase tracking-wide text-slate-400"><span data-icon="spark" class="inline-flex text-violet-300"></span>XP</p>
+        <p id="stat-xp" class="mt-1 text-2xl font-semibold text-white">—</p>
+        <div class="mt-2 h-1.5 overflow-hidden rounded-full bg-white/10">
+          <div id="xp-bar" class="h-full w-0 bg-gradient-to-r from-cyan-400 to-violet-500"></div>
+        </div>
+      </div>
+      <div class="rounded-2xl border border-white/10 p-4">
+        <p class="flex items-center gap-1.5 text-xs uppercase tracking-wide text-slate-400"><span data-icon="coin" class="inline-flex text-amber-300"></span>Coins</p>
+        <p id="stat-coins" class="mt-1 text-2xl font-semibold text-white">—</p>
+      </div>
+    </section>
+    <section class="mt-8 grid gap-4 lg:grid-cols-2" id="plans">
+      <article class="rounded-2xl border border-white/10 bg-white/[0.03] p-5">
+        <p class="text-xs uppercase tracking-widest text-cyan-300">Current plan</p>
+        <h2 id="plan-title" class="mt-1 text-xl font-semibold text-white">FREE PLAN</h2>
+        <p class="mt-2 text-sm text-slate-400">Play every core game, earn XP, coins, achievements and climb real leaderboards.</p>
+        <ul class="mt-4 space-y-1 text-sm text-slate-300">
+          <li>Core games, XP, levels, coins</li>
+          <li>Achievements, streaks, basic stats</li>
+          <li>Free stages and basic modes</li>
+        </ul>
+      </article>
+      <article class="rounded-2xl border border-amber-400/25 bg-amber-400/5 p-5">
+        <p class="text-xs uppercase tracking-widest text-amber-300">Game Arena Pro</p>
+        <h2 class="mt-1 text-xl font-semibold text-white">MORE STAGES + MODES</h2>
+        <p class="mt-2 text-sm text-slate-400">Pro is not a paid checkout yet. Join the waitlist for early access when it opens.</p>
+        <div class="mt-4 overflow-x-auto">
+          <table class="w-full min-w-[260px] text-left text-xs">
+            <thead><tr class="text-slate-500"><th class="py-1">Feature</th><th>Free</th><th>Pro</th></tr></thead>
+            <tbody class="text-slate-200">
+              <tr><td class="py-1">Core games, XP, coins</td><td>Yes</td><td>Yes</td></tr>
+              <tr><td class="py-1">Achievements & streaks</td><td>Yes</td><td>Yes</td></tr>
+              <tr><td class="py-1">Basic modes & stages</td><td>Yes</td><td>Yes</td></tr>
+              <tr><td class="py-1">Extra stages & modes</td><td>Limited</td><td>Planned</td></tr>
+              <tr><td class="py-1">Advanced stats & rewards</td><td>—</td><td>Planned</td></tr>
+              <tr><td class="py-1">Studio projects</td><td>5</td><td>50</td></tr>
+              <tr><td class="py-1">Published Studio games</td><td>5</td><td>40</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <button id="join-waitlist" class="mt-5 min-h-11 w-full rounded-xl bg-amber-400 px-4 font-semibold text-slate-950">Join the waitlist</button>
+        <p id="waitlist-note" class="mt-2 text-xs text-slate-400"></p>
+      </article>
+    </section>
+    <section class="mt-8 rounded-2xl border border-cyan-400/20 bg-cyan-400/5 p-5">
+      <p class="text-xs uppercase tracking-widest text-cyan-300">Game Arena Studio</p>
+      <h2 class="mt-1 text-xl font-semibold text-white">Build your own games</h2>
+      <p class="mt-2 text-sm text-slate-400">Create with blocks, test instantly, then publish a public link. Free plan includes 5 projects, 5 published games, and basic analytics.</p>
+      <a href="/studio" class="mt-4 inline-block min-h-11 rounded-xl bg-cyan-400 px-4 py-2 text-sm font-semibold text-slate-950">Open Studio</a>
+    </section>
+    <section class="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-3" id="games"></section>
+  </main>
+  <script src="/js/icons.js"></script>
+  <script src="/js/arena.js"></script>
+  <script>
+    document.querySelectorAll("[data-icon]").forEach((el) => {
+      el.innerHTML = Icons.svg(el.dataset.icon, "h-3.5 w-3.5");
+    });
+    const cards = [
+      ["riddle", "puzzle", "Riddle Game", "Solve timed riddles.", "Puzzle", "Medium", "free"],
+      ["reflex", "bolt", "Reflex Challenge", "Hit targets as they appear.", "Reflex", "Hard", "free"],
+      ["memory", "brain", "Memory Challenge", "Match pairs under pressure.", "Memory", "Medium", "free"],
+      ["penalty", "ball", "Penalty Shootout", "Beat the keeper.", "Sports", "Easy", "free"],
+      ["rps", "hand", "Rock Paper Scissors", "Win the series.", "Casual", "Easy", "free"],
+      ["wordclash", "type", "Word Clash", "Unscramble before time ends.", "Words", "Medium", "free"],
+      ["trivia", "help", "Trivia Rush", "Answer and keep the streak.", "Trivia", "Hard", "free"],
+      ["minirace", "car", "Mini Race", "Steer, dodge and finish the track.", "Arcade", "Medium", "free"],
+      ["targetstrike", "target", "Target Strike", "Hit moving targets under time.", "Arcade", "Hard", "free"],
+      ["patternmaster", "grid", "Pattern Master", "Watch the pattern, then rebuild it.", "Memory", "Medium", "free"],
+      ["numberrush", "calc", "Number Rush", "Solve number challenges against the clock.", "Math", "Medium", "free"],
+      ["codebreaker", "lock", "Code Breaker", "Crack the hidden code with clues.", "Logic", "Hard", "free"],
+      ["minifootball", "ball", "Mini Football", "3v3 match. Pass, dribble and score.", "Sports", "Medium", "free"],
+      ["wordscramble", "type", "Word Scramble", "Unscramble letters before the timer ends.", "Words", "Medium", "free"],
+      ["mathrush", "calc", "Math Rush", "Solve arithmetic as fast as you can.", "Math", "Medium", "free"],
+      ["wordsearch", "grid", "Word Search", "Find hidden words in the grid.", "Words", "Medium", "free"],
+      ["merge2048", "grid", "2048", "Slide tiles and merge matching numbers.", "Puzzle", "Medium", "free"],
+      ["sudoku", "grid", "Sudoku", "Fill the grid with valid numbers.", "Logic", "Hard", "free"],
+      ["chess", "target", "Chess", "Play a legal chess match against AI.", "Strategy", "Hard", "pro"],
+      ["checkers", "grid", "Checkers", "Capture pieces and reach the king row.", "Strategy", "Medium", "pro"],
+      ["minesweeper", "lock", "Minesweeper", "Clear the board without hitting a mine.", "Logic", "Medium", "pro"],
+      ["crossword", "type", "Crossword", "Solve clues in a compact crossword.", "Words", "Medium", "pro"],
+    ];
+
+    Arena.getMe().then((user) => {
+      if (!user) {
+        location.replace("/login?next=/dashboard");
+        return;
+      }
+      document.querySelector("[data-username]").textContent = user.username;
+      document.querySelector("[data-user-level]").textContent = "Lv " + user.level;
+      document.getElementById("stat-level").textContent = user.level;
+      document.getElementById("stat-xp").textContent = (user.xp || 0) + " (" + user.xpIntoLevel + "/100)";
+      document.getElementById("xp-bar").style.width = user.xpIntoLevel + "%";
+      document.getElementById("stat-coins").textContent = user.coins || 0;
+      document.getElementById("plan-title").textContent = ((user.plan || "free").toUpperCase()) + " PLAN";
+      Arena.waitlistStatus().then((w) => {
+        if (w && w.entry) document.getElementById("waitlist-note").textContent = "You're already on the Pro waitlist.";
+      });
+      document.getElementById("join-waitlist").onclick = () => Arena.openWaitlist(user, "dashboard");
+      const stats = user.stats || {};
+      const isPro = (user.plan || "free") === "pro";
+      document.getElementById("games").innerHTML = cards.map(([id, icon, name, desc, cat, diff, access]) => {
+        const st = stats[id] || {};
+        const stage = st.stage || 1;
+        const best = st.best == null ? "—" : st.best;
+        const extra = st.bestTime != null ? " · Best time " + Number(st.bestTime).toFixed(2) + "s" : "";
+        const locked = access === "pro" && !isPro;
+        const cta = locked
+          ? `<button class="mt-4 min-h-11 w-full rounded-lg bg-amber-400 px-3 py-2 text-sm font-semibold text-slate-950" data-waitlist="${id}">Join the waitlist</button>`
+          : `<a class="mt-4 inline-block min-h-11 rounded-lg bg-cyan-400/15 px-3 py-2 text-sm font-semibold text-cyan-100 hover:bg-cyan-400/25" href="${Arena.GAMES[id].path}">Play</a>`;
+        return `
+      <article class="rounded-2xl border border-white/10 bg-white/[0.03] p-5">
+        <div class="flex items-start justify-between gap-2">
+          <div class="grid h-11 w-11 place-items-center rounded-xl bg-cyan-400/10 text-cyan-200">${Icons.svg(icon, "h-5 w-5")}</div>
+          <span class="rounded-full border ${access === "pro" ? "border-amber-400/30 text-amber-200" : "border-white/15 text-slate-300"} px-2 py-0.5 text-[11px] uppercase">${access}</span>
+        </div>
+        <h2 class="mt-3 font-semibold text-white">${name}</h2>
+        <p class="mt-1 text-sm text-slate-400">${desc}</p>
+        <p class="mt-2 text-xs text-slate-500">${cat} · ${diff} · Stage ${stage} · Best ${best}${extra}</p>
+        ${cta}
+      </article>`;
+      }).join("");
+      document.querySelectorAll("[data-waitlist]").forEach((btn) => {
+        btn.onclick = () => Arena.openWaitlist(user, btn.dataset.waitlist);
+      });
+    });
+    document.getElementById("logout").addEventListener("click", async () => {
+      await fetch("/api/logout", { method: "POST" });
+      location.href = "/";
+    });
+  </script>
+</body>
+</html>

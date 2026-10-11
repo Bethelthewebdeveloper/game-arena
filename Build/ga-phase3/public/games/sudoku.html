@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Sudoku — Game Arena</title>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700&display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com"></script><style>.grid-cols-9{grid-template-columns:repeat(9,minmax(0,1fr))}</style></head>
+<body class="min-h-screen bg-[#070b16] font-sans text-slate-200">
+<main class="mx-auto max-w-xl px-4 py-6">
+<p class="text-xs uppercase tracking-widest text-cyan-300">Game Arena · Sudoku</p>
+
+<h1 class="mt-1 text-2xl font-semibold text-white">Sudoku</h1>
+<select id="diff" class="mt-3 min-h-11 w-full rounded-xl border border-white/10 bg-white/5 px-3">
+  <option value="easy">Easy</option><option value="medium">Medium</option><option value="hard">Hard</option>
+</select>
+<button id="start" class="mt-3 min-h-12 w-full rounded-xl bg-cyan-400 font-semibold text-slate-950">Start</button>
+<section id="play" hidden>
+  <div class="mt-3 flex justify-between text-sm"><span id="time">0s</span><span id="miss">Misses 0</span></div>
+  <div id="board" class="mt-3 grid grid-cols-9 gap-0.5"></div>
+  <div class="mt-3 grid grid-cols-9 gap-1" id="nums"></div>
+</section>
+<section id="result" hidden class="mt-4 rounded-2xl border border-white/10 p-5">
+  <h2 class="text-xl font-semibold">COMPLETE</h2><p id="rbody" class="mt-2 text-sm"></p>
+  <button id="again" class="mt-4 min-h-11 rounded-xl bg-cyan-400 px-4 font-semibold text-slate-950">Play Again</button>
+  <a class="ml-2 rounded-xl border border-white/15 px-4 py-2" href="/dashboard">Back</a>
+</section>
+</main>
+<script src="/js/arena.js"></script><script src="/js/game-shell.js"></script>
+<script>GameShell.mountChrome("SUDOKU");GameShell.guard();
+const SOL="534678912672195348198342567859761423426853791713924856961537284287419635345286179";
+const PUZ={
+easy:"530070000600195000098000060800060003400803001700020006060000280000419005000080079",
+easyS:SOL,
+medium:"530070000600195000098000060800060003400803001700020006060000280000419005000080000",
+mediumS:SOL,
+hard:"030070000600195000098000060800060003400803001700020006060000280000419005000080000",
+hardS:SOL
+};
+let S,sel=null,tick;
+document.getElementById("start").onclick=()=>{
+  GameShell.resetSubmit();
+  const d=document.getElementById("diff").value;
+  S={give:PUZ[d].split(""), sol:PUZ[d+"S"].split(""), miss:0, t0:Date.now(), done:false};
+  document.getElementById("play").hidden=false; document.getElementById("result").hidden=true;
+  draw(); clearInterval(tick); tick=setInterval(()=>document.getElementById("time").textContent=Math.floor((Date.now()-S.t0)/1000)+"s",500);
+};
+function draw(){
+  const b=document.getElementById("board"); b.innerHTML="";
+  S.give.forEach((ch,i)=>{
+    const locked=PUZ[document.getElementById("diff").value][i]!=="0";
+    const cell=document.createElement("button");
+    cell.className="h-9 text-sm "+((Math.floor(i/9)%3===2)?"mb-1 ":"")+(i%3===2?"mr-1 ":"")+(locked?"bg-white/10 text-slate-400":"bg-white/5 text-white");
+    cell.textContent=S.give[i]==="0"?"":S.give[i];
+    cell.onclick=()=>{ if(!locked) sel=i; };
+    b.appendChild(cell);
+  });
+}
+document.getElementById("nums").innerHTML=[1,2,3,4,5,6,7,8,9].map(n=>`<button class="min-h-10 rounded bg-white/10" data-n="${n}">${n}</button>`).join("");
+document.getElementById("nums").onclick=(e)=>{
+  const n=e.target.dataset.n; if(!n||sel==null||S.done) return;
+  if(S.sol[sel]!==String(n)){ S.miss++; document.getElementById("miss").textContent="Misses "+S.miss; return; }
+  S.give[sel]=String(n); draw();
+  if(S.give.join("")===S.sol.join("")) finish();
+};
+async function finish(){
+  S.done=true; clearInterval(tick);
+  const t=Math.floor((Date.now()-S.t0)/1000);
+  document.getElementById("play").hidden=true; document.getElementById("result").hidden=false;
+  document.getElementById("rbody").textContent="Time "+t+"s · Misses "+S.miss;
+  const score=Math.max(50, 1200-t-S.miss*20);
+  const out=await GameShell.submitRun("sudoku", score,0,0,{completed:true,stage:1,time:t});
+  if(out&&out.awarded) document.getElementById("rbody").textContent+=" · XP +"+out.awarded.xp;
+}
+document.getElementById("again").onclick=()=>{document.getElementById("play").hidden=true;document.getElementById("result").hidden=true;};
+</script></body></html>

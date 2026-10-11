@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Math Rush — Game Arena</title>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700&display=swap" rel="stylesheet" />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style></style>
+</head>
+<body class="min-h-screen bg-[#070b16] font-sans text-slate-200">
+  <main class="mx-auto max-w-xl px-4 py-6">
+    <p class="text-xs uppercase tracking-widest text-cyan-300">Game Arena · Math Rush</p>
+    
+    <h1 class="mt-1 text-2xl font-semibold text-white">Math Rush</h1>
+    <section id="lobby" class="mt-4"><button id="start" class="min-h-12 w-full rounded-xl bg-cyan-400 font-semibold text-slate-950">Start</button></section>
+    <section id="play" hidden>
+      <div class="mb-2 flex justify-between text-sm"><span id="hud"></span><span id="time"></span></div>
+      <p id="q" class="rounded-2xl border border-white/10 p-6 text-center text-3xl text-white"></p>
+      <form id="form" class="mt-4 flex gap-2"><input id="ans" type="number" class="min-h-12 flex-1 rounded-xl border border-white/10 bg-white/5 px-3" /><button class="min-h-12 rounded-xl bg-cyan-400 px-4 font-semibold text-slate-950">Go</button></form>
+    </section>
+    <section id="result" hidden class="mt-4 rounded-2xl border border-white/10 p-5">
+      <h2 class="text-xl font-semibold">RESULTS</h2><p id="rbody" class="mt-2 text-sm leading-7"></p>
+      <button id="again" class="mt-4 min-h-11 rounded-xl bg-cyan-400 px-4 font-semibold text-slate-950">Play Again</button>
+      <a href="/dashboard" class="ml-2 min-h-11 inline-flex items-center rounded-xl border border-white/15 px-4">Back</a>
+    </section>
+
+  </main>
+  <script src="/js/arena.js"></script>
+  <script src="/js/game-shell.js"></script>
+  <script>
+    GameShell.mountChrome("MATH RUSH");
+    
+    GameShell.guard();
+    let S,tick;
+    function makeQ(n){
+      const ops=["+","-","×","÷"]; const op=ops[Math.min(3, Math.floor(n/3))];
+      let a=1+Math.floor(Math.random()*(6+n*2)), b=1+Math.floor(Math.random()*(6+n));
+      if(op==="÷"){ b=1+Math.floor(Math.random()*8); a=b*(1+Math.floor(Math.random()*(4+n))); }
+      const ans=op==="+"?a+b:op==="-"?a-b:op==="×"?a*b:a/b;
+      return {text:a+" "+op+" "+b, ans};
+    }
+    function start(){ GameShell.resetSubmit(); S={n:1,score:0,ok:0,miss:0,left:40,q:null};
+      document.getElementById("lobby").hidden=true; document.getElementById("result").hidden=true; document.getElementById("play").hidden=false;
+      next(); clearInterval(tick); tick=setInterval(()=>{S.left--; document.getElementById("time").textContent=S.left+"s"; if(S.left<=0) finish();},1000); }
+    function next(){ S.q=makeQ(S.n); document.getElementById("q").textContent=S.q.text; document.getElementById("ans").value=""; document.getElementById("hud").textContent="Q"+S.n+" · "+S.score; document.getElementById("time").textContent=S.left+"s"; }
+    async function finish(){ clearInterval(tick); document.getElementById("play").hidden=true; document.getElementById("result").hidden=false;
+      document.getElementById("rbody").textContent="Score "+S.score+" · Correct "+S.ok+" · Miss "+S.miss;
+      const out=await GameShell.submitRun("mathrush", S.score,0,0,{completed:S.ok>=6,stage:Math.max(1,S.ok)});
+      if(out&&out.awarded) document.getElementById("rbody").textContent+=" · XP +"+out.awarded.xp+" · Coins +"+out.awarded.coins; }
+    document.getElementById("start").onclick=start; document.getElementById("again").onclick=()=>{document.getElementById("lobby").hidden=false;document.getElementById("result").hidden=true;};
+    document.getElementById("form").onsubmit=(e)=>{ e.preventDefault(); const v=Number(document.getElementById("ans").value);
+      if(v===S.q.ans){ S.ok++; S.score+=15; S.n++; } else S.miss++; next(); };
+
+  </script>
+</body>
+</html>

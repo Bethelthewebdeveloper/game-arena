@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <script>!function(w,d,s,u,n,a,b){if(w[n])return;a=w[n]={q:[],t:+new Date,s:[],o:u,track:function(){a.q.push([+new Date].concat([].slice.call(arguments)))},setScope:function(){a.s=[].slice.call(arguments).filter(function(x){return typeof x==="string"});a.q.push([+new Date,"setScope"].concat(a.s))},scope:function(){var c=[].slice.call(arguments);return{track:function(){a.q.push([+new Date].concat([].slice.call(arguments)).concat([{__scope:c}]))}}}};b=d.createElement(s);b.async=1;b.src=u+"/s.js";d.getElementsByTagName(s)[0].parentNode.insertBefore(b,d.getElementsByTagName(s)[0])}(window,document,"script","https://t.whop.tw","whop");whop.setScope("biz_zI77NtsVMXsSId");whop.track("page");</script>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#070b16" />
+  <link rel="icon" href="/icons/favicon-32.png" type="image/png" />
+  <link rel="manifest" href="/manifest.webmanifest" />
+  <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" />
+
+  <title>Sign Up — Game Arena</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700&family=Outfit:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>tailwind.config={theme:{extend:{fontFamily:{display:['Orbitron','sans-serif'],sans:['Outfit','system-ui','sans-serif']}}}}</script>
+</head>
+<body class="min-h-screen bg-[#070b16] font-sans text-slate-200 antialiased">
+  <div class="mx-auto flex min-h-screen max-w-md flex-col justify-center px-4 py-10">
+    <a href="/" class="mb-8 inline-flex items-center self-start"><img src="/brand/logo-wordmark.png" alt="Game Arena" width="170" height="54" class="h-8 w-auto sm:h-9" /></a>
+    <h1 class="text-3xl font-semibold text-white">Create your profile</h1>
+    <p class="mt-2 text-sm text-slate-400">Join Game Arena and start building progress across every game.</p>
+    <form id="form" class="mt-8 space-y-4" novalidate>
+      <label class="block text-sm">
+        <span class="text-slate-300">Username</span>
+        <input name="username" autocomplete="username" required minlength="3" maxlength="20" class="mt-1 w-full rounded-xl border border-white/10 bg-white/5 px-3 py-2.5 outline-none ring-cyan-400 focus:ring-2" />
+        <span class="mt-1 block text-xs text-slate-500">3–20 letters, numbers, or underscores.</span>
+      </label>
+      <label class="block text-sm">
+        <span class="text-slate-300">Password</span>
+        <input name="password" type="password" autocomplete="new-password" required minlength="6" class="mt-1 w-full rounded-xl border border-white/10 bg-white/5 px-3 py-2.5 outline-none ring-cyan-400 focus:ring-2" />
+      </label>
+      <p id="error" class="hidden text-sm text-rose-300" role="alert"></p>
+      <button class="w-full rounded-xl bg-gradient-to-r from-cyan-400 to-violet-500 py-2.5 text-sm font-semibold text-slate-950">Sign up</button>
+    </form>
+    <p class="mt-6 text-sm text-slate-400">Already playing? <a class="text-cyan-300 hover:underline" id="login-link" href="/login">Log in</a></p>
+  </div>
+  <script src="/js/arena.js"></script>
+  <script>
+    const next = Arena.nextFromQuery();
+    document.getElementById("login-link").href = "/login?next=" + encodeURIComponent(next);
+    Arena.getMe().then((u) => { if (u) location.replace(next); });
+    document.getElementById("form").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const fd = new FormData(e.target);
+      const err = document.getElementById("error");
+      err.classList.add("hidden");
+      try {
+        const res = await fetch("/api/register", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ username: fd.get("username"), password: fd.get("password") }),
+        });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) {
+          err.textContent = data.error || "Could not create account.";
+          err.classList.remove("hidden");
+          return;
+        }
+        location.href = next;
+      } catch {
+        err.textContent = "Could not reach the server. Try again.";
+        err.classList.remove("hidden");
+      }
+    });
+  </script>
+</body>
+</html>

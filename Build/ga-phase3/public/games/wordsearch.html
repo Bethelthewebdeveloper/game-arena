@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Word Search — Game Arena</title>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700&display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com"></script><style></style></head>
+<body class="min-h-screen bg-[#070b16] font-sans text-slate-200">
+<main class="mx-auto max-w-xl px-4 py-6">
+<p class="text-xs uppercase tracking-widest text-cyan-300">Game Arena · Word Search</p>
+
+<h1 class="mt-1 text-2xl font-semibold text-white">Word Search</h1>
+<section id="lobby" class="mt-4"><button id="start" class="min-h-12 w-full rounded-xl bg-cyan-400 font-semibold text-slate-950">Start</button></section>
+<section id="play" hidden>
+  <div class="mb-2 flex justify-between text-sm"><span id="hud"></span><span id="time"></span></div>
+  <div id="grid" class="grid grid-cols-8 gap-1"></div>
+  <p id="words" class="mt-3 text-sm text-slate-300"></p>
+</section>
+<section id="result" hidden class="mt-4 rounded-2xl border border-white/10 p-5">
+  <h2 class="text-xl font-semibold">RESULTS</h2><p id="rbody" class="mt-2 text-sm"></p>
+  <button id="again" class="mt-4 min-h-11 rounded-xl bg-cyan-400 px-4 font-semibold text-slate-950">Play Again</button>
+  <a class="ml-2 rounded-xl border border-white/15 px-4 py-2" href="/dashboard">Back</a>
+</section>
+</main>
+<script src="/js/arena.js"></script><script src="/js/game-shell.js"></script>
+<script>GameShell.mountChrome("WORD SEARCH");
+GameShell.guard();
+const BANK=["GAME","ARENA","WORD","PLAY","GRID","CODE","LEVEL","COIN"];
+let S,tick,sel=[];
+function place(words,n){
+  const g=Array.from({length:n},()=>Array(n).fill(""));
+  const dirs=[[1,0],[0,1],[1,1]];
+  words.forEach(w=>{
+    for(let t=0;t<80;t++){
+      const [dx,dy]=dirs[t%3], x=Math.floor(Math.random()*n), y=Math.floor(Math.random()*n);
+      const cells=[]; let ok=true;
+      for(let i=0;i<w.length;i++){ const xx=x+dx*i, yy=y+dy*i; if(xx<0||yy<0||xx>=n||yy>=n||(g[yy][xx]&&g[yy][xx]!==w[i])){ok=false;break;} cells.push([xx,yy]); }
+      if(ok){ cells.forEach((c,i)=>g[c[1]][c[0]]=w[i]); return; }
+    }
+  });
+  const A="ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+  for(let y=0;y<n;y++) for(let x=0;x<n;x++) if(!g[y][x]) g[y][x]=A[Math.floor(Math.random()*26)];
+  return g;
+}
+function start(){
+  GameShell.resetSubmit();
+  const words=BANK.slice().sort(()=>Math.random()-0.5).slice(0,5);
+  S={n:8,words,found:new Set(),left:75,g:place(words,8)};
+  document.getElementById("lobby").hidden=true; document.getElementById("result").hidden=true; document.getElementById("play").hidden=false;
+  draw(); document.getElementById("words").textContent="Find: "+words.join(", ");
+  clearInterval(tick); tick=setInterval(()=>{S.left--; document.getElementById("time").textContent=S.left+"s"; document.getElementById("hud").textContent=S.found.size+"/"+S.words.length; if(S.left<=0||S.found.size===S.words.length) finish();},1000);
+}
+function draw(){
+  const el=document.getElementById("grid"); el.innerHTML="";
+  S.g.flat().forEach((ch,i)=>{
+    const b=document.createElement("button"); b.className="min-h-9 rounded bg-white/10 text-sm"; b.textContent=ch;
+    b.onclick=()=>{ sel.push(i); b.classList.add("bg-cyan-400/40"); if(sel.length>=3) check(); };
+    el.appendChild(b);
+  });
+}
+function check(){
+  const letters=sel.map(i=>S.g[Math.floor(i/8)][i%8]).join("");
+  const rev=letters.split("").reverse().join("");
+  S.words.forEach(w=>{ if(!S.found.has(w)&&(letters.includes(w)||rev.includes(w))) S.found.add(w); });
+  sel=[]; [...document.getElementById("grid").children].forEach(c=>c.classList.remove("bg-cyan-400/40"));
+  document.getElementById("hud").textContent=S.found.size+"/"+S.words.length;
+  if(S.found.size===S.words.length) finish();
+}
+async function finish(){
+  clearInterval(tick); document.getElementById("play").hidden=true; document.getElementById("result").hidden=false;
+  const score=S.found.size*80 + Math.max(0,S.left)*2;
+  document.getElementById("rbody").textContent="Found "+S.found.size+"/"+S.words.length+" · Score "+score;
+  const out=await GameShell.submitRun("wordsearch", score,0,0,{completed:S.found.size>=3,stage:S.found.size});
+  if(out&&out.awarded) document.getElementById("rbody").textContent+=" · XP +"+out.awarded.xp;
+}
+document.getElementById("start").onclick=start; document.getElementById("again").onclick=()=>{document.getElementById("lobby").hidden=false;document.getElementById("result").hidden=true;};
+</script></body></html>
